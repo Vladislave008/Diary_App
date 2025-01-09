@@ -8,9 +8,9 @@ import 'package:namer_app/widgets/reg_form.dart';
 import 'package:namer_app/providers/provider.dart';
 import 'package:provider/provider.dart';
 
+// test_of_git_push
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
-
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
