@@ -8,9 +8,9 @@ import 'package:namer_app/widgets/reg_form.dart';
 import 'package:namer_app/providers/provider.dart';
 import 'package:provider/provider.dart';
 
+// test_of_git_push
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
-
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
@@ -140,7 +140,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Firebase $buttonText'),
+        title: Text(buttonText),
         //title: isLogin ? Text('Войти в аккаунт') : Text('Создать аккаунт'),
         actions: <Widget>[
           IconButton(
@@ -163,79 +163,74 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ],
       ),
-      body: Padding(
-          padding: const EdgeInsets.all(30.0),
-          child: Center(
-            child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: (isLogin
-                    ? [
-                        Container(
-                          //color: Colors.blue,
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage(
-                                  'assets/images/images.jpg'), // Путь к изображению
-                              fit: BoxFit
-                                  .cover, // Растянуть изображение на весь экран
+      body: SingleChildScrollView(
+          child: Container(
+              decoration: BoxDecoration(color: Colors.red),
+              padding: const EdgeInsets.all(30.0),
+              child: Center(
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    children: (isLogin
+                        ? [
+                            Container(
+                              //color: Colors.blue,
+                              child: AuthForm(
+                                authButtonText: buttonText,
+                                onAuth: onAuth,
+                                emailController: emailController,
+                                passwordController: passwordController,
+                              ),
                             ),
-                          ),
-
-                          child: AuthForm(
-                            authButtonText: buttonText,
-                            onAuth: onAuth,
-                            emailController: emailController,
-                            passwordController: passwordController,
-                          ),
-                        ),
-                        Container(
-                            //color : Colors.green,
-                            child: Column(children: [
-                          TextButton(
-                            child: Text(logRegButtonText),
-                            onPressed: () {
-                              setState(() {
-                                isLogin = !isLogin;
-                              });
-                            },
-                          ),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                                foregroundColor: Colors.red),
-                            onPressed: () {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) =>
-                                    ResetScreen(), // Создание экземпляра ResetScreen
-                              ));
-                            },
-                            child: Text('Не помню пароль'),
-                          ),
-                        ])),
-                      ]
-                    : [
-                        Container(
-                            //color: Colors.blue,
-                            child: RegForm(
-                          authButtonText: buttonText,
-                          onAuth: onReg,
-                          emailController: emailController,
-                          passwordController: passwordController,
-                          passwordConfirmController: passwordConfirmController,
-                        )),
-                        Container(
-                            //color : Colors.green,
-                            child: Column(children: [
-                          TextButton(
-                            child: Text(logRegButtonText),
-                            onPressed: () {
-                              setState(() {
-                                isLogin = !isLogin;
-                              });
-                            },
-                          ),
-                        ])),
-                      ])),
-          )),
+                            Container(
+                                //color : Colors.green,
+                                child: Column(children: [
+                              TextButton(
+                                child: Text(logRegButtonText),
+                                onPressed: () {
+                                  setState(() {
+                                    isLogin = !isLogin;
+                                  });
+                                },
+                              ),
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                    foregroundColor: Colors.red),
+                                onPressed: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) =>
+                                        ResetScreen(), // Создание экземпляра ResetScreen
+                                  ));
+                                },
+                                child: Text('Не помню пароль'),
+                              ),
+                            ])),
+                          ]
+                        : [
+                            Container(
+                                //color: Colors.blue,
+                                child: RegForm(
+                              authButtonText: buttonText,
+                              onAuth: onReg,
+                              emailController: emailController,
+                              passwordController: passwordController,
+                              passwordConfirmController:
+                                  passwordConfirmController,
+                            )),
+                            Container(
+                                //color : Colors.green,
+                                child: Column(children: [
+                              TextButton(
+                                child: Text(logRegButtonText),
+                                onPressed: () {
+                                  setState(() {
+                                    isLogin = !isLogin;
+                                  });
+                                },
+                              ),
+                            ])),
+                          ])),
+              ))),
     );
   }
 }
