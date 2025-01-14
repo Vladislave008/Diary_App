@@ -26,6 +26,7 @@ class _AuthFormState extends State<RegForm> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
@@ -43,7 +44,8 @@ class _AuthFormState extends State<RegForm> {
               ),
               onPressed: () {
                 setState(() {
-                  _isPasswordVisible = !_isPasswordVisible; // Меняем видимость пароля
+                  _isPasswordVisible =
+                      !_isPasswordVisible; // Меняем видимость пароля
                 });
               },
             ),
@@ -60,7 +62,8 @@ class _AuthFormState extends State<RegForm> {
               ),
               onPressed: () {
                 setState(() {
-                  _isPasswordVisible = !_isPasswordVisible; // Меняем видимость пароля
+                  _isPasswordVisible =
+                      !_isPasswordVisible; // Меняем видимость пароля
                 });
               },
             ),
