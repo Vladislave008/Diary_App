@@ -74,8 +74,11 @@ class _AuthFormState extends State<RegForm> {
         ElevatedButton(
           onPressed: widget.onAuth,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).primaryColor,
+            backgroundColor: const Color.fromARGB(255, 255, 102, 0),
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30.0),
+            ),
           ),
           child: Text(widget.authButtonText),
         ),

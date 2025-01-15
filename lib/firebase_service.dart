@@ -1,9 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+
 class FirebaseService {
   static final FirebaseService _singleton = FirebaseService._internal();
-  
+
   factory FirebaseService() => _singleton;
 
   FirebaseService._internal();
@@ -24,33 +25,35 @@ class FirebaseService {
           email: email, password: password);
       print(credential);
       User? user = credential.user;
-      
+
       if (user != null) {
         if (user.emailVerified) {
           print('login');
-        return 'login'; 
-        }
-        else if (user.emailVerified == false) {
+          return 'login';
+        } else if (user.emailVerified == false) {
           if (context.mounted) {
             try {
-              await user.delete(); 
+              await user.delete();
               print("User account deleted successfully.");
             } on FirebaseAuthException catch (e) {
               print("Failed to delete user account: $e");
             }
-          showSnackbar(context, 'Аккаунт не подтверждён. Создайте его заново и подтвердите.');
-          return 'invalid_data';}
+            showSnackbar(context,
+                'Аккаунт не подтверждён. Создайте его заново и подтвердите.');
+            return 'invalid_data';
+          }
         }
       }
 
       return 'invalid_data';
-
     } on FirebaseAuthException catch (e) {
       if (context.mounted) {
-        
         if (email.isEmpty || password.isEmpty) {
           print('Empty field');
-          showSnackbar(context, 'Заполните все данные для авторизации');
+          showSnackbar(
+            context,
+            'Заполните все данные для авторизации',
+          );
         } else if (e.code == 'invalid-credential') {
           print('invalid-credential');
           showSnackbar(context, 'Неверные данные аккаунта. Попробуйте ещё раз');
@@ -73,7 +76,10 @@ class FirebaseService {
   }
 
   void showSnackbar(BuildContext context, String message) {
-    final snackBar = SnackBar(content: Text(message), duration: Duration(seconds: 5), backgroundColor: Theme.of(context).primaryColor);
+    final snackBar = SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 5),
+        backgroundColor: const Color.fromARGB(255, 255, 102, 0));
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
@@ -86,127 +92,130 @@ class FirebaseService {
     }
   }
 
-
   Future<bool> checkEmailVerification(User user) async {
-  // Обновляем состояние пользователя
-  await user.reload();
+    // Обновляем состояние пользователя
+    await user.reload();
 
-  // Получаем обновленного пользователя
-  User? updatedUser = FirebaseAuth.instance.currentUser;
+    // Получаем обновленного пользователя
+    User? updatedUser = FirebaseAuth.instance.currentUser;
 
-  // Проверяем, подтвержден ли email
-  if (updatedUser != null && updatedUser.emailVerified) {
-    print("Email is verified.");
-    return true; // Возвращаем true, если email подтвержден
-  } else {
-    print("Email is not verified yet.");
-    return false; // Возвращаем false, если email не подтвержден
+    // Проверяем, подтвержден ли email
+    if (updatedUser != null && updatedUser.emailVerified) {
+      print("Email is verified.");
+      return true; // Возвращаем true, если email подтвержден
+    } else {
+      print("Email is not verified yet.");
+      return false; // Возвращаем false, если email не подтвержден
+    }
   }
-}
 
-Future<String> onRegister({
-  required BuildContext context,
-  required String email,
-  required String password,
-}) async {
-  // Если поля пустые, сразу возвращаем 'empty_field'
-  if (email.isEmpty || password.isEmpty) {
-    print('Empty field');
-    showSnackbar(context, 'Заполните все данные для авторизации');
-    return 'empty_field';
-  }
-  
-  try {
-    // Попытка создать нового пользователя
-    final credential = await auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+  Future<String> onRegister({
+    required BuildContext context,
+    required String email,
+    required String password,
+  }) async {
+    // Если поля пустые, сразу возвращаем 'empty_field'
+    if (email.isEmpty || password.isEmpty) {
+      print('Empty field');
+      showSnackbar(context, 'Заполните все данные для авторизации');
+      return 'empty_field';
+    }
 
-    // Отправка подтверждения электронной почты
-    if (context.mounted) {
-      showSnackbar(context, 'Вам отправлено письмо с подтверждением. Проверьте почту');
-      showDialog<String>(
-        context: context,
-        barrierDismissible: false, // пользователи не могут закрыть диалог, пока идет отсчет
-        builder: (BuildContext context) {
-          int countdown = 30; // Общее время ожидания в секундах
+    try {
+      // Попытка создать нового пользователя
+      final credential = await auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-          // Создаем таймер только один раз при создании диалога
-          Timer? timer;
-          
-          return StatefulBuilder(
-            builder: (context, setState) {
-              // Запуск таймера только при первом построении
-              timer ??= Timer.periodic(Duration(seconds: 1), (timer) {
+      // Отправка подтверждения электронной почты
+      if (context.mounted) {
+        showSnackbar(
+            context, 'Вам отправлено письмо с подтверждением. Проверьте почту');
+        showDialog<String>(
+          context: context,
+          barrierDismissible:
+              false, // пользователи не могут закрыть диалог, пока идет отсчет
+          builder: (BuildContext context) {
+            int countdown = 30; // Общее время ожидания в секундах
+
+            // Создаем таймер только один раз при создании диалога
+            Timer? timer;
+
+            return StatefulBuilder(
+              builder: (context, setState) {
+                // Запуск таймера только при первом построении
+                timer ??= Timer.periodic(Duration(seconds: 1), (timer) {
                   if (countdown > 0) {
                     countdown--;
                     setState(() {}); // Обновить состояние диалога
                   } else {
                     timer.cancel();
-                    Navigator.pop(context); // Закрыть диалог по истечении времени
+                    Navigator.pop(
+                        context); // Закрыть диалог по истечении времени
                   }
                 });
 
-              return AlertDialog(
-                title: const Text('Подтвердите аккаунт'),
-                content: Text('Ожидание подтверждения: $countdown секунд'),
-              );
-            },
-          );
-        },
-      );
-    }
+                return AlertDialog(
+                  title: const Text('Подтвердите аккаунт'),
+                  content: Text('Ожидание подтверждения: $countdown секунд'),
+                );
+              },
+            );
+          },
+        );
+      }
 
-    await credential.user?.sendEmailVerification();
+      await credential.user?.sendEmailVerification();
 
-    // Периодическая проверка подтверждения email
-    bool isVerified = false;
+      // Периодическая проверка подтверждения email
+      bool isVerified = false;
 
-    for (int i = 0; i < 5; i++) { // Проверяем 5 раз
-      await Future.delayed(Duration(seconds: 5)); // Ждем 5 секунд
-      isVerified = await checkEmailVerification(credential.user!);
+      for (int i = 0; i < 5; i++) {
+        // Проверяем 5 раз
+        await Future.delayed(Duration(seconds: 5)); // Ждем 5 секунд
+        isVerified = await checkEmailVerification(credential.user!);
+        if (isVerified) {
+          break;
+        } // Если подтвержден, выходим из цикла
+      }
+
       if (isVerified) {
-        break;
-      } // Если подтвержден, выходим из цикла
-    }
-    
-    if (isVerified) {
+        return 'verified';
+      } else {
+        if (context.mounted) {
+          showSnackbar(
+              context, 'Вы не подтвердили аккаунт. Попробуйте ещё раз.');
+        }
 
-      return 'verified';
-    } else {
+        return 'not_verified';
+      }
+    } on FirebaseAuthException catch (e) {
+      // Обработка различных ошибок FirebaseAuth
       if (context.mounted) {
-        showSnackbar(context, 'Вы не подтвердили аккаунт. Попробуйте ещё раз.');
+        if (e.code == 'invalid-email') {
+          print('The email provided is incorrect.');
+          showSnackbar(context, 'Неправильный формат ввода почтового адреса');
+        } else if (e.code == 'weak-password') {
+          print('The password provided is too weak.');
+          showSnackbar(context, 'Слишком простой пароль');
+        } else if (e.code == 'email-already-in-use') {
+          print('This email is already in use');
+          showSnackbar(
+              context, 'Этот адрес электронной почты уже зарегистрирован');
+        }
       }
+      print(e);
 
-      return 'not_verified';
-      
+      return 'invalid_data'; // Возвращаем 'invalid_data' в случае ошибки
+    } catch (e) {
+      print(
+          "Unexpected error: $e"); // Вывод ошибки в случае непредвиденного сбоя
+
+      return 'not_verified'; // Возвращаем 'not_verified' в случае ошибок
     }
-
-  } on FirebaseAuthException catch (e) {
-    // Обработка различных ошибок FirebaseAuth
-    if (context.mounted) {
-      if (e.code == 'invalid-email') {
-        print('The email provided is incorrect.');
-        showSnackbar(context, 'Неправильный формат ввода почтового адреса');
-      } else if (e.code == 'weak-password') {
-        print('The password provided is too weak.');
-        showSnackbar(context, 'Слишком простой пароль');
-      } else if (e.code == 'email-already-in-use') {
-        print('This email is already in use');
-        showSnackbar(context, 'Этот адрес электронной почты уже зарегистрирован');
-      }
-    }
-    print(e);
-
-    return 'invalid_data'; // Возвращаем 'invalid_data' в случае ошибки 
-    
-  } catch (e) {
-    print("Unexpected error: $e"); // Вывод ошибки в случае непредвиденного сбоя
-    
-    return 'not_verified'; // Возвращаем 'not_verified' в случае ошибок
   }
-}
+
   Future<void> logOut() async {
     await auth.signOut();
   }
