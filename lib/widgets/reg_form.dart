@@ -80,7 +80,7 @@ class _AuthFormState extends State<RegForm> {
           ),
           obscureText: !_isPasswordVisible, // Устанавливаем видимость пароля
         ),
-        const SizedBox(height: 16.0),
+        const SizedBox(height: 20.0),
         ElevatedButton(
           onPressed: widget.emailController.text.isEmpty ||
                   widget.passwordController.text.isEmpty ||

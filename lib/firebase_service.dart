@@ -250,14 +250,14 @@ class FirebaseService {
     }
   }
 
-  Future<void> logOut() async {
-    await auth.signOut();
-  }
-
-  Future<void> onVerifyEmail() async {
-    final currentUser = auth.currentUser;
-    if (currentUser != null) {
-      await currentUser.sendEmailVerification();
+  Future<String> logOut({required BuildContext context}) async {
+    try {
+      await auth.signOut();
+      print('Sign Out Completed');
+      return "log_out"; // Возвращаем строку подтверждения
+    } catch (e) {
+      print('Error signing out: $e');
+      return "error"; // Возвращаем строку ошибки, если что-то пошло не так
     }
   }
 }

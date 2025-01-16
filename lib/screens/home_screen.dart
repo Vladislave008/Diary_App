@@ -1,6 +1,7 @@
 //import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 //import 'package:namer_app/firebase_service.dart';
+import 'package:namer_app/screens/settings_screen.dart';
 
 class NavigationExample extends StatefulWidget {
   const NavigationExample({super.key});
@@ -10,10 +11,6 @@ class NavigationExample extends StatefulWidget {
 }
 
 class _NavigationExampleState extends State<NavigationExample> {
-  /*final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  void _openDrawer() {
-    _scaffoldKey.currentState!.openDrawer();
-  }*/
   int currentPageIndex = 0;
   void _closeDrawer() {
     Navigator.of(context).pop();
@@ -23,7 +20,19 @@ class _NavigationExampleState extends State<NavigationExample> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('AppBar Demo')),
+      appBar: AppBar(title: const Text('AppBar Demo'), actions: <Widget>[
+        IconButton(
+          icon: const Icon(Icons.settings),
+          tooltip: 'Settings',
+          onPressed: () {
+            if (context.mounted) {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => SettingsScreen(),
+              ));
+            }
+          },
+        )
+      ]),
       drawer: Drawer(
         child: Center(
           child: Column(

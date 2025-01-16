@@ -146,7 +146,7 @@ class _AuthScreenState extends State<AuthScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(159, 207, 234, 250),
+        backgroundColor: const Color.fromARGB(110, 168, 195, 212),
         title: Text(buttonText),
         //title: isLogin ? Text('Войти в аккаунт') : Text('Создать аккаунт'),
         actions: <Widget>[
@@ -181,7 +181,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ],
             ),
           ),
-          padding: const EdgeInsets.all(30.0),
+          padding: const EdgeInsets.only(left: 30.0, right: 30.0),
           child: Center(
               child: SingleChildScrollView(
             child: Container(
@@ -228,9 +228,6 @@ class _AuthScreenState extends State<AuthScreen> {
                             ])),
                           ]
                         : [
-                            SizedBox(
-                              height: 10,
-                            ),
                             Container(
                                 child: RegForm(
                               authButtonText: buttonText,

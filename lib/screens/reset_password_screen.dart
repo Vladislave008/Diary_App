@@ -33,7 +33,7 @@ class _ResetScreenState extends State<ResetScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(159, 207, 234, 250),
+        backgroundColor: const Color.fromARGB(110, 168, 195, 212),
         title: const Text('Восстановление пароля'),
       ),
       body: Container(
@@ -66,11 +66,11 @@ class _ResetScreenState extends State<ResetScreen> {
                           labelText: 'Email',
                           icon: Icon(Icons.mail_outline_rounded)),
                       onChanged: (value) {
-                        setState(() {}); // обновить состояние кнопки
+                        setState(() {});
                       },
                       obscureText: false,
                     ),
-                    const SizedBox(height: 16.0),
+                    const SizedBox(height: 20.0),
                     ElevatedButton(
                       onPressed: emailController.text.isEmpty
                           ? null

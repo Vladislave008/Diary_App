@@ -59,7 +59,7 @@ class _AuthFormState extends State<AuthForm> {
           obscureText: !_isPasswordVisible, // Устанавливаем видимость пароля
         ),
 
-        const SizedBox(height: 16.0),
+        const SizedBox(height: 20.0),
 
         ElevatedButton(
           onPressed: widget.emailController.text.isEmpty ||
@@ -75,7 +75,7 @@ class _AuthFormState extends State<AuthForm> {
           ),
           child: Text(widget.authButtonText),
         ),
-        const SizedBox(height: 16.0),
+        const SizedBox(height: 10.0),
 
         // Здесь вы можете добавить другие кнопки, если нужно.
       ],
