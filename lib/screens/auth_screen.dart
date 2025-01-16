@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:namer_app/firebase_service.dart';
 import 'package:namer_app/screens/reset_password_screen.dart';
-import 'package:namer_app/screens/user_info_screen.dart';
+import 'package:namer_app/screens/home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:namer_app/widgets/auth_form.dart';
 import 'package:namer_app/widgets/reg_form.dart';
@@ -130,6 +130,7 @@ class _AuthScreenState extends State<AuthScreen> {
           }
         } else {
           print("Passwords don't match");
+          showSnackbar(context, 'Пароли не совпадают. Попробуйте ещё раз.');
         }
       } else {
         showSnackbar(context,

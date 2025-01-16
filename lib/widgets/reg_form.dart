@@ -23,6 +23,10 @@ class RegForm extends StatefulWidget {
 class _AuthFormState extends State<RegForm> {
   bool _isPasswordVisible = false; // Переменная для состояния видимости пароля
 
+  void _updateButtonState() {
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -30,13 +34,17 @@ class _AuthFormState extends State<RegForm> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
+          onChanged: (value) => _updateButtonState(),
           controller: widget.emailController,
-          decoration: const InputDecoration(labelText: 'Email'),
+          decoration: const InputDecoration(
+              labelText: 'Email', icon: Icon(Icons.mail_outline_rounded)),
           // Если необходимо, добавьте обработчик onChanged, но избегайте тяжелых операций здесь
         ),
         TextFormField(
+          onChanged: (value) => _updateButtonState(),
           controller: widget.passwordController,
           decoration: InputDecoration(
+            icon: Icon(Icons.lock_outline_rounded),
             labelText: 'Password',
             suffixIcon: IconButton(
               icon: Icon(
@@ -53,8 +61,10 @@ class _AuthFormState extends State<RegForm> {
           obscureText: !_isPasswordVisible, // Устанавливаем видимость пароля
         ),
         TextFormField(
+          onChanged: (value) => _updateButtonState(),
           controller: widget.passwordConfirmController,
           decoration: InputDecoration(
+            icon: Icon(Icons.lock_outline_rounded),
             labelText: 'Confirm Password',
             suffixIcon: IconButton(
               icon: Icon(
@@ -72,7 +82,11 @@ class _AuthFormState extends State<RegForm> {
         ),
         const SizedBox(height: 16.0),
         ElevatedButton(
-          onPressed: widget.onAuth,
+          onPressed: widget.emailController.text.isEmpty ||
+                  widget.passwordController.text.isEmpty ||
+                  widget.passwordConfirmController.text.isEmpty
+              ? null
+              : widget.onAuth,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color.fromARGB(255, 255, 102, 0),
             foregroundColor: Theme.of(context).colorScheme.onPrimary,

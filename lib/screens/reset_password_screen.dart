@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:namer_app/firebase_service.dart';
 //import 'package:namer_app/widgets/auth_form.dart';
+import 'package:namer_app/providers/provider.dart';
+import 'package:provider/provider.dart';
 
 class ResetScreen extends StatefulWidget {
   const ResetScreen({Key? key}) : super(key: key);
@@ -31,6 +33,7 @@ class _ResetScreenState extends State<ResetScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color.fromARGB(159, 207, 234, 250),
         title: const Text('Восстановление пароля'),
       ),
       body: Container(
@@ -59,7 +62,9 @@ class _ResetScreenState extends State<ResetScreen> {
                   children: [
                     TextFormField(
                       controller: emailController,
-                      decoration: const InputDecoration(labelText: 'Email'),
+                      decoration: const InputDecoration(
+                          labelText: 'Email',
+                          icon: Icon(Icons.mail_outline_rounded)),
                       onChanged: (value) {
                         setState(() {}); // обновить состояние кнопки
                       },
@@ -71,14 +76,13 @@ class _ResetScreenState extends State<ResetScreen> {
                           ? null
                           : () {
                               String email = emailController.text.trim();
-                              if (email.isEmpty) {
-                                showSnackbar(
-                                    'Введите свой адрес электронной почты');
-                              } else {
-                                firebaseService.resetUserPassword(email);
-                                showSnackbar(
-                                    'Сообщение отправлено вам на почту');
-                              }
+
+                              firebaseService.resetUserPassword(
+                                email: email,
+                                context: Provider.of<ContextProvider>(context,
+                                        listen: false)
+                                    .context!,
+                              );
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromARGB(255, 255, 102, 0),

@@ -83,12 +83,47 @@ class FirebaseService {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  Future<void> resetUserPassword(String email) async {
+  Future<void> resetUserPassword({
+    required String email,
+    required BuildContext context,
+  }) async {
     try {
       await auth.sendPasswordResetEmail(email: email);
       print("Password reset email sent!");
-    } catch (error) {
-      print("Error: $error");
+      if (context.mounted) {
+        showSnackbar(context, 'Письмо для сброса пароля отправлено на $email');
+      }
+    } on FirebaseAuthException catch (e) {
+      if (context.mounted) {
+        print(e.code);
+        switch (e.code) {
+          case 'invalid-credential':
+            print('invalid-credential');
+            showSnackbar(
+                context, 'Неверные данные аккаунта. Попробуйте ещё раз');
+          case 'user-not-found':
+            print('Нет пользователя с такой почтой');
+            showSnackbar(context, 'Нет пользователя с такой почтой');
+          case 'wrong-password':
+            print('Пароль введён некорректно');
+            showSnackbar(context, 'Пароль введён некорректно');
+          case 'invalid-email':
+            print('Адрес почты введён некорректно');
+            showSnackbar(context, 'Адрес почты введён некорректно');
+          case 'too-many-requests':
+            print('Слишком много попыток');
+            showSnackbar(context, 'Слишком много попыток. Попробуйте позже');
+          default:
+            print('Произошла ошибка: ${e.message}');
+            showSnackbar(context, 'Произошла ошибка. Попробуйте еще раз.');
+        }
+      }
+    } catch (e) {
+      // Обработка других возможных исключений
+      if (context.mounted) {
+        print('Произошла ошибка: $e');
+        showSnackbar(context, 'Произошла ошибка. Попробуйте еще раз.');
+      }
     }
   }
 
@@ -130,14 +165,12 @@ class FirebaseService {
 
       // Отправка подтверждения электронной почты
       if (context.mounted) {
-        showSnackbar(
-            context, 'Вам отправлено письмо с подтверждением. Проверьте почту');
         showDialog<String>(
           context: context,
           barrierDismissible:
               false, // пользователи не могут закрыть диалог, пока идет отсчет
           builder: (BuildContext context) {
-            int countdown = 30; // Общее время ожидания в секундах
+            int countdown = 100; // Общее время ожидания в секундах
 
             // Создаем таймер только один раз при создании диалога
             Timer? timer;
@@ -158,7 +191,8 @@ class FirebaseService {
 
                 return AlertDialog(
                   title: const Text('Подтвердите аккаунт'),
-                  content: Text('Ожидание подтверждения: $countdown секунд'),
+                  content: Text(
+                      'На вашу почту отправлено письмо для подтверждения аккаунта.\nОжидание подтверждения: $countdown секунд'),
                 );
               },
             );
@@ -171,7 +205,7 @@ class FirebaseService {
       // Периодическая проверка подтверждения email
       bool isVerified = false;
 
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 25; i++) {
         // Проверяем 5 раз
         await Future.delayed(Duration(seconds: 5)); // Ждем 5 секунд
         isVerified = await checkEmailVerification(credential.user!);

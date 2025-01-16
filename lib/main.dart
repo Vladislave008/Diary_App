@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:namer_app/firebase_service.dart';
 import 'package:namer_app/screens/auth_screen.dart';
-import 'package:namer_app/screens/user_info_screen.dart';
+import 'package:namer_app/screens/home_screen.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'package:namer_app/providers/provider.dart';

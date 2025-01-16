@@ -1,245 +1,73 @@
 import 'package:flutter/material.dart';
-import 'package:namer_app/firebase_service.dart';
-import 'package:namer_app/screens/reset_password_screen.dart';
-import 'package:namer_app/screens/user_info_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:namer_app/widgets/auth_form.dart';
-import 'package:namer_app/widgets/reg_form.dart';
-import 'package:namer_app/providers/provider.dart';
-import 'package:provider/provider.dart';
-import 'dart:ui' as ui;
 
-// test_of_git_push
-class AuthScreen extends StatefulWidget {
-  const AuthScreen({Key? key}) : super(key: key);
+class AuthForm extends StatefulWidget {
+  const AuthForm({
+    Key? key,
+    required this.onAuth,
+    required this.authButtonText,
+    required this.emailController,
+    required this.passwordController,
+  }) : super(key: key);
+
+  final VoidCallback onAuth;
+  final String authButtonText;
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  State<AuthForm> createState() => _AuthFormState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
-  bool isLogin = true;
-  final FirebaseService firebaseService = FirebaseService();
-
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController passwordConfirmController =
-      TextEditingController();
-
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    passwordConfirmController.dispose();
-    super.dispose();
-  }
+class _AuthFormState extends State<AuthForm> {
+  bool _isPasswordVisible = false; // Переменная для состояния видимости пароля
 
   @override
   Widget build(BuildContext context) {
-    Provider.of<ContextProvider>(context, listen: false).setContext(context);
-
-    void showSnackbar(BuildContext context, String message) {
-      final snackBar = SnackBar(
-          content: Text(message),
-          duration: Duration(seconds: 5),
-          backgroundColor: Theme.of(context).primaryColor);
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-    }
-
-    void onAuth() async {
-      String loginSuccess = await firebaseService.onLogin(
-        context: Provider.of<ContextProvider>(context, listen: false).context!,
-        email: emailController.text,
-        password: passwordController.text,
-      );
-      if (loginSuccess == 'login') {
-        User? user = FirebaseAuth.instance.currentUser;
-
-        if (user != null) {
-          if (context.mounted) {
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => NavigationExample(),
-            ));
-          }
-        }
-      }
-    }
-
-    bool checkEmail(String email) {
-      String allowedChars =
-          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#%&'*+/=?^_`@.{|}~-";
-      bool isValid = true;
-      for (int i = 0; i < email.length; i++) {
-        if (!allowedChars.contains(email[i])) {
-          isValid = false;
-          break;
-        }
-      }
-      if (!email.contains('@') ||
-          email.indexOf('@') == 0 ||
-          email.indexOf('@') == email.length - 1) {
-        isValid = false;
-      }
-      return isValid;
-    }
-
-    void onReg() async {
-      if (checkEmail(emailController.text)) {
-        if (passwordController.text == passwordConfirmController.text) {
-          print("Passwords match, attempting registration...");
-
-          final localContext =
-              Provider.of<ContextProvider>(context, listen: false).context!;
-
-          String registrationSuccess = await firebaseService.onRegister(
-            context: localContext,
-            email: emailController.text,
-            password: passwordController.text,
-          );
-
-          if (registrationSuccess == 'verified') {
-            User? user = FirebaseAuth.instance.currentUser;
-
-            if (user != null) {
-              if (context.mounted) {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => NavigationExample(),
-                ));
-              }
-            } else {
-              print("User is null after registration.");
-            }
-          } else if (registrationSuccess == 'not_verified') {
-            print("Registration failed. Deleting user account...");
-            User? user = FirebaseAuth.instance.currentUser;
-
-            if (user != null) {
-              try {
-                await user.delete(); // Удаляем аккаунт пользователя
-                print("User account deleted successfully.");
-              } on FirebaseAuthException catch (e) {
-                print("Failed to delete user account: $e");
-              }
-            } else {
-              print("No user to delete.");
-            }
-          } else if (registrationSuccess == 'invalid_data') {
-            print("Registration failed. Invalid data provided.");
-          }
-        } else {
-          print("Passwords don't match");
-        }
-      } else {
-        showSnackbar(context,
-            'Некорректный формат почтового адреса. Попробуйте ещё раз.');
-      }
-    }
-
-    final buttonText = isLogin ? 'Войти' : 'Создать аккаунт';
-
-    double screenHeight = MediaQuery.of(context).size.height;
-
-    String logRegButtonText =
-        isLogin ? 'Ещё нет аккаунта? Создайте его' : 'Уже есть аккаунт? Войти';
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(buttonText),
-        //title: isLogin ? Text('Войти в аккаунт') : Text('Создать аккаунт'),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded),
-            tooltip: 'Вопросы',
-            onPressed: () => showDialog<String>(
-              context: context,
-              builder: (BuildContext context) => AlertDialog(
-                title: const Text('Аутентификация пользователя'),
-                content: const Text(
-                    'При создании и использовании аккаунта лучше использовать реальные почтовые адреса, иначе будет утрачена возможность восстанавливать утерянные пароли'),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, 'OK'),
-                    child: const Text('OK'),
-                  ),
-                ],
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          controller: widget.emailController,
+          decoration: const InputDecoration(labelText: 'Email'),
+          // Если необходимо, добавьте обработчик onChanged, но избегайте тяжелых операций здесь
+        ),
+        TextFormField(
+          controller: widget.passwordController,
+          decoration: InputDecoration(
+            labelText: 'Password',
+            suffixIcon: IconButton(
+              icon: Icon(
+                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
               ),
+              onPressed: () {
+                setState(() {
+                  _isPasswordVisible =
+                      !_isPasswordVisible; // Меняем видимость пароля
+                });
+              },
             ),
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-          child: ConstrainedBox(
-              constraints:
-                  BoxConstraints.fromViewConstraints(ui.ViewConstraints(
-                minHeight: screenHeight,
-              )),
-              child: Container(
-                  //decoration: BoxDecoration(color: Colors.red),
-                  padding: const EdgeInsets.all(30.0),
-                  child: Center(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.max,
-                        children: (isLogin
-                            ? [
-                                Container(
-                                  //color: Colors.blue,
-                                  child: AuthForm(
-                                    authButtonText: buttonText,
-                                    onAuth: onAuth,
-                                    emailController: emailController,
-                                    passwordController: passwordController,
-                                  ),
-                                ),
-                                Container(
-                                    //color : Colors.green,
-                                    child: Column(children: [
-                                  TextButton(
-                                    child: Text(logRegButtonText),
-                                    onPressed: () {
-                                      setState(() {
-                                        isLogin = !isLogin;
-                                      });
-                                    },
-                                  ),
-                                  TextButton(
-                                    style: TextButton.styleFrom(
-                                        foregroundColor: Colors.red),
-                                    onPressed: () {
-                                      Navigator.of(context)
-                                          .push(MaterialPageRoute(
-                                        builder: (context) =>
-                                            ResetScreen(), // Создание экземпляра ResetScreen
-                                      ));
-                                    },
-                                    child: Text('Не помню пароль'),
-                                  ),
-                                ])),
-                              ]
-                            : [
-                                Container(
-                                    //color: Colors.blue,
-                                    child: RegForm(
-                                  authButtonText: buttonText,
-                                  onAuth: onReg,
-                                  emailController: emailController,
-                                  passwordController: passwordController,
-                                  passwordConfirmController:
-                                      passwordConfirmController,
-                                )),
-                                Container(
-                                    //color : Colors.green,
-                                    child: Column(children: [
-                                  TextButton(
-                                    child: Text(logRegButtonText),
-                                    onPressed: () {
-                                      setState(() {
-                                        isLogin = !isLogin;
-                                      });
-                                    },
-                                  ),
-                                ])),
-                              ])),
-                  )))),
+          obscureText: !_isPasswordVisible, // Устанавливаем видимость пароля
+        ),
+
+        const SizedBox(height: 16.0),
+
+        ElevatedButton(
+          onPressed: widget.onAuth,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 255, 102, 0),
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30.0),
+            ),
+          ),
+          child: Text(widget.authButtonText),
+        ),
+        const SizedBox(height: 16.0),
+
+        // Здесь вы можете добавить другие кнопки, если нужно.
+      ],
     );
   }
 }

@@ -34,13 +34,15 @@ class _AuthFormState extends State<AuthForm> {
         TextFormField(
           onChanged: (value) => _updateButtonState(),
           controller: widget.emailController,
-          decoration: const InputDecoration(labelText: 'Email'),
+          decoration: const InputDecoration(
+              labelText: 'Email', icon: Icon(Icons.mail_outline_rounded)),
           // Если необходимо, добавьте обработчик onChanged, но избегайте тяжелых операций здесь
         ),
         TextFormField(
           onChanged: (value) => _updateButtonState(),
           controller: widget.passwordController,
           decoration: InputDecoration(
+            icon: Icon(Icons.lock_outline_rounded),
             labelText: 'Password',
             suffixIcon: IconButton(
               icon: Icon(

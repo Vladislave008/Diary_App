@@ -19,13 +19,12 @@ class _NavigationExampleState extends State<NavigationExample> {
     Navigator.of(context).pop();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('AppBar Demo')),
-            drawer: Drawer(
+      drawer: Drawer(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -92,9 +91,10 @@ class _NavigationExampleState extends State<NavigationExample> {
             ),
           ),
         ),
-        /// Notifications page 
- 
-         Card(
+
+        /// Notifications page
+
+        Card(
           shadowColor: Colors.transparent,
           margin: const EdgeInsets.all(8.0),
           child: SizedBox.expand(
@@ -106,10 +106,7 @@ class _NavigationExampleState extends State<NavigationExample> {
             ),
           ),
         ),
-
-
       ][currentPageIndex],
     );
   }
 }
-
