@@ -37,9 +37,10 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     FirebaseService().onListenUser((user) {
       if (user == null) {
-        Navigator.push(kNavigatorKey.currentContext!,
-            MaterialPageRoute(builder: (_) => AuthScreen()));
-        //MaterialPageRoute(builder: (_) => NavigationExample()));
+        Navigator.push(
+            kNavigatorKey.currentContext!,
+            //MaterialPageRoute(builder: (_) => AuthScreen()));
+            MaterialPageRoute(builder: (_) => NavigationExample()));
       } else if (user.emailVerified) {
         Navigator.push(kNavigatorKey.currentContext!,
             MaterialPageRoute(builder: (_) => NavigationExample()));

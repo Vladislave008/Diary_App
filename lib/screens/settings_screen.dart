@@ -39,6 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       drawer: Drawer(
         child: Center(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               const Text('This is the Drawer'),
@@ -50,15 +51,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ),
-      body:
-
-          /// Home page
-          ElevatedButton(
-        onPressed: logOut,
-        child: const Text('Log Out'),
-      ),
-
-      /// Notifications page
+      body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color.fromARGB(255, 80, 185, 247),
+                const Color.fromARGB(255, 219, 81, 247)
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.only(left: 15.0, right: 15.0),
+          child: Center(
+              child: SingleChildScrollView(
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(160, 255, 255, 255),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              padding: const EdgeInsets.all(20.0),
+              child:
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red, // Задаем цвет текста
+                  ),
+                  onPressed: logOut,
+                  child: const Text('Log Out'),
+                )
+              ]),
+            ),
+          ))),
     );
   }
 }
