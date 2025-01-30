@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 //import 'package:namer_app/firebase_service.dart';
 import 'package:namer_app/screens/settings_screen.dart';
+//import 'package:namer_app/screens/test_screen.dart';
+import 'package:namer_app/screens/tab_screen.dart';
 
 class NavigationExample extends StatefulWidget {
   const NavigationExample({super.key});
@@ -20,19 +22,33 @@ class _NavigationExampleState extends State<NavigationExample> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('AppBar Demo'), actions: <Widget>[
-        IconButton(
-          icon: const Icon(Icons.settings),
-          tooltip: 'Settings',
-          onPressed: () {
-            if (context.mounted) {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => SettingsScreen(),
-              ));
-            }
-          },
-        )
-      ]),
+      appBar: AppBar(
+          title: const Text('AppBar Demo'),
+          backgroundColor: const Color.fromARGB(110, 168, 195, 212),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.ac_unit_outlined),
+              tooltip: 'Test',
+              onPressed: () {
+                if (context.mounted) {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => TabsPage(),
+                  ));
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Settings',
+              onPressed: () {
+                if (context.mounted) {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => SettingsScreen(),
+                  ));
+                }
+              },
+            )
+          ]),
       drawer: Drawer(
         child: Center(
           child: Column(

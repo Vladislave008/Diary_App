@@ -13,9 +13,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   int currentPageIndex = 0;
-  void _closeDrawer() {
-    Navigator.of(context).pop();
-  }
 
   final FirebaseService firebaseService = FirebaseService();
   @override
@@ -35,21 +32,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('SETTINGS')),
-      drawer: Drawer(
-        child: Center(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const Text('This is the Drawer'),
-              ElevatedButton(
-                onPressed: _closeDrawer,
-                child: const Text('Close Drawer'),
-              ),
-            ],
-          ),
-        ),
+      appBar: AppBar(
+        title: const Text('Настройки'),
+        backgroundColor: const Color.fromARGB(110, 168, 195, 212),
       ),
       body: Container(
           decoration: BoxDecoration(
@@ -65,24 +50,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.only(left: 15.0, right: 15.0),
           child: Center(
               child: SingleChildScrollView(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(160, 255, 255, 255),
-                borderRadius: BorderRadius.circular(15),
+            child: Column(children: [
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(160, 255, 255, 255),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                padding: const EdgeInsets.all(20.0),
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red, // Задаем цвет текста
+                    ),
+                    onPressed: logOut,
+                    child: const Text('Log Out'),
+                  )
+                ]),
               ),
-              padding: const EdgeInsets.all(20.0),
-              child:
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.red, // Задаем цвет текста
-                  ),
-                  onPressed: logOut,
-                  child: const Text('Log Out'),
-                )
-              ]),
-            ),
+              SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(160, 255, 255, 255),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                padding: const EdgeInsets.all(20.0),
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red, // Задаем цвет текста
+                    ),
+                    onPressed: null,
+                    child: const Text('Log Out'),
+                  )
+                ]),
+              ),
+            ]),
           ))),
     );
   }

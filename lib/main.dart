@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:namer_app/firebase_service.dart';
 import 'package:namer_app/screens/auth_screen.dart';
 import 'package:namer_app/screens/home_screen.dart';
+//import 'package:namer_app/screens/test_screen.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'package:namer_app/providers/provider.dart';
@@ -37,10 +38,10 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     FirebaseService().onListenUser((user) {
       if (user == null) {
-        Navigator.push(
-            kNavigatorKey.currentContext!,
-            //MaterialPageRoute(builder: (_) => AuthScreen()));
-            MaterialPageRoute(builder: (_) => NavigationExample()));
+        Navigator.push(kNavigatorKey.currentContext!,
+            MaterialPageRoute(builder: (_) => AuthScreen()));
+        //MaterialPageRoute(builder: (_) => NavigationExample()));
+        //MaterialPageRoute(builder: (_) => ItemList()));
       } else if (user.emailVerified) {
         Navigator.push(kNavigatorKey.currentContext!,
             MaterialPageRoute(builder: (_) => NavigationExample()));

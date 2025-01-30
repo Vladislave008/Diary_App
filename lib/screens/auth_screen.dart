@@ -184,7 +184,7 @@ class _AuthScreenState extends State<AuthScreen> {
           padding: const EdgeInsets.only(left: 30.0, right: 30.0),
           child: Center(
               child: SingleChildScrollView(
-            child: Container(
+              child: Container(
                 decoration: BoxDecoration(
                   color: const Color.fromARGB(160, 255, 255, 255),
                   borderRadius: BorderRadius.circular(30),
