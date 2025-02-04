@@ -64,6 +64,20 @@ async def read_items(owner_id: str):
     items = db.query(Item).filter(Item.owner_id == owner_id).all() 
     return items
 
+
+@app.delete("/items/{item_name}", status_code=204)
+async def delete_item(item_name: str, owner_id: str, tab_name: str):
+    db: Session = SessionLocal()
+
+
+    item_to_delete = db.query(Item).filter(Item.text == item_name, Item.owner_id == owner_id, Item.tab_name == tab_name).first()
+
+    if item_to_delete is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    db.delete(item_to_delete)
+    db.commit()
+
 class Tab(Base):
     __tablename__ = "tabs"
 
@@ -117,4 +131,6 @@ Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, log_level="info")
-#python C:/Users/BAAL/Desktop/diary_app/lib/main.py
+    
+# python C:/Users/BAAL/Desktop/diary_app/lib/main.py
+# adb connect 172.25.0.3:5555

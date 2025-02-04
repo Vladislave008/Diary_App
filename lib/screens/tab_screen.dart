@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'tab_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:namer_app/screens/tab_content_page.dart';
 
 class TabsPage extends StatefulWidget {
   @override
@@ -11,8 +8,10 @@ class TabsPage extends StatefulWidget {
 }
 
 class _TabsPageState extends State<TabsPage> {
-  List<MyTab> tabs = [];
+  List<String> tabs = [];
   final TextEditingController _nameController = TextEditingController();
+  Set<int> selectedIndices = {};
+  bool isSelectionMode = false;
 
   @override
   void initState() {
@@ -20,126 +19,166 @@ class _TabsPageState extends State<TabsPage> {
     fetchTabs();
   }
 
+  final SupabaseClient supabase = Supabase.instance.client;
+
   Future<void> fetchTabs() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
+    if (FirebaseAuth.instance.currentUser == null) {
       print('User not logged in');
       return;
     }
+    try {
+      final response = await supabase
+          .from('tabs')
+          .select('name')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
 
-    final response = await http
-        .get(Uri.parse('http://172.25.0.7:8000/tabs?owner_id=${user.uid}'));
-
-    if (response.statusCode == 200) {
-      List jsonResponse = json.decode(response.body);
+      print('Данные из базы: $response');
       setState(() {
-        tabs = jsonResponse.map((tab) => MyTab.fromJson(tab)).toList();
+        tabs = List<String>.from(response.map((tab) => tab['name'] as String));
       });
-    } else {
-      throw Exception('Failed to load tabs');
+    } catch (e) {
+      print('Ошибка при загрузке списков: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
+        );
+      }
     }
   }
 
   Future<void> addTab() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      print('User not logged in');
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Введите название списка')),
+      );
       return;
     }
-
-    // Получаем текст имени таба
-    String tabName = _nameController.text.trim();
-
-    // Проверяем на пустое имя
-    if (tabName.isEmpty) {
-      // Отображаем сообщение об ошибке
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('Ошибка'),
-            content: Text('Имя таба не может быть пустым.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Закрыть диалог
-                },
-                child: Text('OK'),
-              ),
-            ],
-          );
-        },
+    if (_nameController.text[0] == ' ') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Название списка не может быть пустым или начинаться с пробела')),
+      );
+      return;
+    }
+    if (tabs.contains(_nameController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Такая вкладка уже существует')),
       );
       return;
     }
 
-    // Проверяем на существующее имя таба
-    bool tabExists = tabs.any((tab) => tab.name == tabName);
-    if (tabExists) {
-      // Отображаем сообщение об ошибке
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('Ошибка'),
-            content: Text('Таб с таким именем уже существует.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Закрыть диалог
-                },
-                child: Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-      return;
-    }
-
-    // Если все проверки пройдены, выполняем запрос на добавление таба
-    final response = await http.post(
-      Uri.parse('http://172.25.0.7:8000/tabs/'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'name': tabName,
-        'owner_id': user.uid,
-      }),
-    );
-
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      fetchTabs();
+    try {
+      await supabase.from('tabs').insert([
+        {
+          'name': _nameController.text,
+          'user_id': FirebaseAuth.instance.currentUser!.uid
+        }
+      ]);
       _nameController.clear();
-    } else {
-      throw Exception('Failed to add tab');
+      await fetchTabs();
+    } catch (e) {
+      print('Ошибка при добавлении списка: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при добавлении списка: $e')),
+        );
+      }
     }
   }
 
   Future<void> deleteTab(String tabName) async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      print('User not logged in');
-      return;
+    print('delete tab ${tabName}');
+    try {
+      await supabase
+          .from('tabs')
+          .delete()
+          .eq('name', tabName)
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
+      await fetchTabs();
+    } catch (e) {
+      print('Ошибка при удалении таба: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при удалении таба: $e')),
+      );
     }
+  }
 
-    final response = await http.delete(
-      Uri.parse('http://172.25.0.7:8000/tabs/${tabName}?owner_id=${user.uid}'),
-    );
-
-    if (response.statusCode == 204) {
-      fetchTabs();
-    } else {
-      throw Exception('Failed to delete tab');
+  Future<void> deleteSelectedTabs() async {
+    try {
+      for (int index in selectedIndices) {
+        await supabase
+            .from('tabs')
+            .delete()
+            .eq('name', tabs[index])
+            .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
+      }
+      await fetchTabs();
+      setState(() {
+        selectedIndices.clear();
+        isSelectionMode = false;
+      });
+    } catch (e) {
+      print('Ошибка при удалении табов: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при удалении табов: $e')),
+      );
     }
+  }
+
+  void toggleSelection(int index) {
+    setState(() {
+      if (selectedIndices.contains(index)) {
+        selectedIndices.remove(index);
+      } else {
+        selectedIndices.add(index);
+      }
+      if (selectedIndices.isEmpty) {
+        isSelectionMode = false;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tabs'),
+        title: isSelectionMode
+            ? Text('Выбрано: ${selectedIndices.length}')
+            : Text('Мои Списки'),
+        actions: [
+          if (isSelectionMode)
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('Удалить выбранные списки'),
+                      content: Text(
+                          'Вы уверены, что хотите удалить все выбранные списки?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Закрыть диалог
+                          },
+                          child: Text('Отмена'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop(); // Закрыть диалог
+                            await deleteSelectedTabs(); // Удалить выбранные списки
+                          },
+                          child: Text('Удалить'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -147,59 +186,70 @@ class _TabsPageState extends State<TabsPage> {
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: 'Tab Name'),
+              decoration: InputDecoration(labelText: 'Название Списка'),
             ),
           ),
           ElevatedButton(
             onPressed: addTab,
-            child: Text('Add Tab'),
+            child: Text('Добавить Список'),
           ),
           Expanded(
             child: ListView.builder(
               itemCount: tabs.length,
               itemBuilder: (context, index) {
                 return ListTile(
-                  title: Text(tabs[index].name),
+                  title: Text(tabs[index]),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            TabContentPage(tabName: tabs[index].name),
-                      ),
-                    );
+                    if (isSelectionMode) {
+                      toggleSelection(index);
+                    }
                   },
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () {
-                      // Функция для удаления таба
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text('Delete Tab'),
-                            content: Text(
-                                'Are you sure you want to delete this tab?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop(); // Закрыть диалог
-                                },
-                                child: Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  deleteTab(tabs[index].name); // Удалить таб
-                                  Navigator.of(context).pop(); // Закрыть диалог
-                                },
-                                child: Text('Delete'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  ),
+                  onLongPress: () {
+                    setState(() {
+                      isSelectionMode = true;
+                      toggleSelection(index);
+                    });
+                  },
+                  trailing: isSelectionMode
+                      ? Checkbox(
+                          value: selectedIndices.contains(index),
+                          onChanged: (value) {
+                            toggleSelection(index);
+                          },
+                        )
+                      : IconButton(
+                          icon: Icon(Icons.delete_outline_outlined),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text('Удалить Список'),
+                                  content: Text(
+                                      'Вы уверены, что хотите удалить список ${tabs[index]}?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context)
+                                            .pop(); // Закрыть диалог
+                                      },
+                                      child: Text('Отмена'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        Navigator.of(context)
+                                            .pop(); // Закрыть диалог
+                                        await deleteTab(
+                                            tabs[index]); // Удалить таб
+                                      },
+                                      child: Text('Удалить'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
                 );
               },
             ),
@@ -207,5 +257,11 @@ class _TabsPageState extends State<TabsPage> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 }

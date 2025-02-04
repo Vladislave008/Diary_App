@@ -8,11 +8,18 @@ import 'package:namer_app/screens/home_screen.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'package:namer_app/providers/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await Supabase.initialize(
+    url: 'https://fohrxkshppelbzhxnbat.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvaHJ4a3NocHBlbGJ6aHhuYmF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg0NDE1MTcsImV4cCI6MjA1NDAxNzUxN30.4aCiPbdMrQE6rmBbAw5PvEHLSL88jVe9lUYshcnGW-E',
   );
 
   runApp(

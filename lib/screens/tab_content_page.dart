@@ -9,7 +9,7 @@ class TabContentPage extends StatefulWidget {
   TabContentPage({required this.tabName});
 
   @override
-  _TabContentPageState createState() => _TabContentPageState();
+  State<TabContentPage> createState() => _TabContentPageState();
 }
 
 class _TabContentPageState extends State<TabContentPage> {
@@ -38,6 +38,10 @@ class _TabContentPageState extends State<TabContentPage> {
             .where((item) => item['tab_name'] == widget.tabName)
             .toList();
       });
+      /*var jsonResponse = json.decode(response.body);
+      setState(() {
+        items = jsonResponse.map((item) => MyItem.fromJson(item)).toList();
+      });*/
     } else {
       throw Exception('Ошибка загрузки данных');
     }
@@ -70,8 +74,26 @@ class _TabContentPageState extends State<TabContentPage> {
     }
   }
 
+  Future<void> deleteItem(String itemName, String tabName) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print('User not logged in');
+      return;
+    }
+
+    final response = await http.delete(Uri.parse(
+        'http://172.25.0.7:8000/items/${Uri.encodeComponent(itemName)}?tab_name=${Uri.encodeComponent(tabName)}&owner_id=${user.uid}'));
+
+    if (response.statusCode == 204) {
+      _fetchItems();
+    } else {
+      throw Exception('Failed to delete item');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    print(items);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.tabName),
@@ -84,6 +106,38 @@ class _TabContentPageState extends State<TabContentPage> {
               itemBuilder: (context, index) {
                 return ListTile(
                   title: Text(items[index]['text']),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () {
+                      // Функция для удаления таба
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text('Delete Tab'),
+                            content: Text(
+                                'Are you sure you want to delete this tab?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  deleteItem(items[index]['text'],
+                                      items[index]['tab_name']);
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text('Delete'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
                 );
               },
             ),
