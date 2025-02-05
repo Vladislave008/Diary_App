@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:namer_app/screens/tab_content_page.dart';
 
 class TabsPage extends StatefulWidget {
   @override
@@ -95,6 +96,13 @@ class _TabsPageState extends State<TabsPage> {
           .delete()
           .eq('name', tabName)
           .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
+
+      await supabase
+          .from('tabs_items')
+          .delete()
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('parent_tab', tabName);
+
       await fetchTabs();
     } catch (e) {
       print('Ошибка при удалении таба: $e');
@@ -112,6 +120,12 @@ class _TabsPageState extends State<TabsPage> {
             .delete()
             .eq('name', tabs[index])
             .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
+
+        await supabase
+            .from('tabs_items')
+            .delete()
+            .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+            .eq('parent_tab', tabs[index]);
       }
       await fetchTabs();
       setState(() {
@@ -143,13 +157,17 @@ class _TabsPageState extends State<TabsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color.fromARGB(110, 168, 195, 212),
         title: isSelectionMode
             ? Text('Выбрано: ${selectedIndices.length}')
             : Text('Мои Списки'),
-        actions: [
-          if (isSelectionMode)
-            IconButton(
-              icon: Icon(Icons.delete),
+        actions: [],
+      ),
+      floatingActionButton: isSelectionMode
+          ? FloatingActionButton(
+              backgroundColor: const Color.fromARGB(255, 245, 46, 46),
+              foregroundColor: Colors.white,
+              child: Icon(Icons.delete_outline_outlined),
               onPressed: () {
                 showDialog(
                   context: context,
@@ -177,85 +195,140 @@ class _TabsPageState extends State<TabsPage> {
                   },
                 );
               },
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: 'Название Списка'),
+            )
+          : null,
+      body: Container(
+          padding: const EdgeInsets.all(10.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color.fromARGB(255, 80, 185, 247),
+                const Color.fromARGB(255, 219, 81, 247)
+              ],
             ),
           ),
-          ElevatedButton(
-            onPressed: addTab,
+          child: Column(
+            children: [
+              //SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                    //color: Color.fromARGB(160, 255, 255, 255),
+                    child: TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Название Списка',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        Icons.add,
+                      ),
+                      onPressed: _nameController.text.isEmpty ||
+                              _nameController.text[0] == ' '
+                          ? null
+                          : addTab,
+                    ),
+                  ),
+                  onChanged: (text) {
+                    setState(() {});
+                  },
+                  maxLength: 40,
+                )),
+              ),
+              /*ElevatedButton(
+            onPressed:
+                _nameController.text.isEmpty || _nameController.text[0] == ' '
+                    ? null
+                    : addTab,
             child: Text('Добавить Список'),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: tabs.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(tabs[index]),
-                  onTap: () {
-                    if (isSelectionMode) {
-                      toggleSelection(index);
-                    }
-                  },
-                  onLongPress: () {
-                    setState(() {
-                      isSelectionMode = true;
-                      toggleSelection(index);
-                    });
-                  },
-                  trailing: isSelectionMode
-                      ? Checkbox(
-                          value: selectedIndices.contains(index),
-                          onChanged: (value) {
-                            toggleSelection(index);
-                          },
-                        )
-                      : IconButton(
-                          icon: Icon(Icons.delete_outline_outlined),
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text('Удалить Список'),
-                                  content: Text(
-                                      'Вы уверены, что хотите удалить список ${tabs[index]}?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context)
-                                            .pop(); // Закрыть диалог
-                                      },
-                                      child: Text('Отмена'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () async {
-                                        Navigator.of(context)
-                                            .pop(); // Закрыть диалог
-                                        await deleteTab(
-                                            tabs[index]); // Удалить таб
-                                      },
-                                      child: Text('Удалить'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
+          ),*/
+              Expanded(
+                child: ListView.builder(
+                  itemCount: tabs.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color:
+                            selectedIndices.contains(index) && isSelectionMode
+                                ? Color.fromARGB(255, 245, 163, 163)
+                                : Color.fromARGB(160, 255, 255, 255),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.all(20.0),
+                      margin: const EdgeInsets.only(bottom: 10.0),
+                      child: ListTile(
+                        title: Text(
+                          tabs[index],
+                          //style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+                        onTap: () {
+                          if (isSelectionMode) {
+                            toggleSelection(index);
+                          } else {
+                            if (context.mounted) {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                builder: (context) =>
+                                    TabContentPage(tabName: tabs[index]),
+                              ));
+                            }
+                          }
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            isSelectionMode = true;
+                            toggleSelection(index);
+                          });
+                        },
+                        trailing: isSelectionMode
+                            ? Checkbox(
+                                activeColor:
+                                    const Color.fromARGB(255, 236, 37, 23),
+                                value: selectedIndices.contains(index),
+                                onChanged: (value) {
+                                  toggleSelection(index);
+                                },
+                              )
+                            : IconButton(
+                                icon: Icon(Icons.delete_outline_outlined),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: Text('Удалить Список'),
+                                        content: Text(
+                                            'Вы уверены, что хотите удалить список ${tabs[index]}?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context)
+                                                  .pop(); // Закрыть диалог
+                                            },
+                                            child: Text('Отмена'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () async {
+                                              Navigator.of(context)
+                                                  .pop(); // Закрыть диалог
+                                              await deleteTab(
+                                                  tabs[index]); // Удалить таб
+                                            },
+                                            child: Text('Удалить'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          )),
     );
   }
 

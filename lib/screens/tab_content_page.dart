@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TabContentPage extends StatefulWidget {
   final String tabName;
-
   TabContentPage({required this.tabName});
 
   @override
@@ -14,7 +12,12 @@ class TabContentPage extends StatefulWidget {
 
 class _TabContentPageState extends State<TabContentPage> {
   List<dynamic> items = [];
-  final TextEditingController _controller = TextEditingController();
+
+  Set<int> selectedIndices = {};
+
+  bool isSelectionMode = false;
+
+  final TextEditingController _nameController = TextEditingController();
 
   @override
   void initState() {
@@ -22,73 +25,131 @@ class _TabContentPageState extends State<TabContentPage> {
     _fetchItems();
   }
 
+  final SupabaseClient supabase = Supabase.instance.client;
+
   Future<void> _fetchItems() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
+    if (FirebaseAuth.instance.currentUser == null) {
       print('User not logged in');
       return;
     }
-    final response = await http
-        .get(Uri.parse('http://172.25.0.7:8000/items/?owner_id=${user.uid}'));
+    try {
+      final response = await supabase
+          .from('tabs_items')
+          .select('name')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('parent_tab', widget.tabName);
 
-    if (response.statusCode == 200) {
+      print('Данные из базы: $response');
       setState(() {
-        var jsonResponse = json.decode(response.body);
-        items = jsonResponse
-            .where((item) => item['tab_name'] == widget.tabName)
-            .toList();
+        items =
+            List<String>.from(response.map((item) => item['name'] as String));
       });
-      /*var jsonResponse = json.decode(response.body);
-      setState(() {
-        items = jsonResponse.map((item) => MyItem.fromJson(item)).toList();
-      });*/
-    } else {
-      throw Exception('Ошибка загрузки данных');
+    } catch (e) {
+      print('Ошибка при загрузке списков: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
+        );
+      }
     }
   }
 
   Future<void> _createItem(String text) async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      print('User not logged in');
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Введите название')),
+      );
       return;
     }
-    final response = await http.post(
-      Uri.parse('http://172.25.0.7:8000/items/'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: json.encode({
-        'text': text,
-        'owner_id': user.uid, // Укажите ID владельца
-        'tab_name': widget.tabName, // Указываем tab_name
-      }),
-    );
+    if (_nameController.text[0] == ' ') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('Название не может быть пустым или начинаться с пробела')),
+      );
+      return;
+    }
+    if (items.contains(_nameController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Такая вкладка уже существует')),
+      );
+      return;
+    }
 
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      // При успехе обновляем список элементов
-      _fetchItems();
-      _controller.clear(); // Очищаем текстовое поле
-    } else {
-      throw Exception('Не удалось создать элемент');
+    try {
+      await supabase.from('tabs_items').insert([
+        {
+          'name': _nameController.text,
+          'user_id': FirebaseAuth.instance.currentUser!.uid,
+          'parent_tab': widget.tabName
+        }
+      ]);
+      _nameController.clear();
+      await _fetchItems();
+    } catch (e) {
+      print('Ошибка при добавлении: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при добавлении: $e')),
+        );
+      }
     }
   }
 
-  Future<void> deleteItem(String itemName, String tabName) async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      print('User not logged in');
-      return;
-    }
+  Future<void> deleteItem(String itemName) async {
+    print('delete tab ${widget.tabName}');
+    try {
+      await supabase
+          .from('tabs_items')
+          .delete()
+          .eq('name', itemName)
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('parent_tab', widget.tabName);
 
-    final response = await http.delete(Uri.parse(
-        'http://172.25.0.7:8000/items/${Uri.encodeComponent(itemName)}?tab_name=${Uri.encodeComponent(tabName)}&owner_id=${user.uid}'));
-
-    if (response.statusCode == 204) {
-      _fetchItems();
-    } else {
-      throw Exception('Failed to delete item');
+      await _fetchItems();
+    } catch (e) {
+      print('Ошибка при удалении: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при удалении: $e')),
+      );
     }
+  }
+
+  Future<void> deleteSelectedItems() async {
+    try {
+      for (int index in selectedIndices) {
+        await supabase
+            .from('tabs_items')
+            .delete()
+            .eq('name', items[index])
+            .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+            .eq('parent_tab', widget.tabName);
+      }
+
+      await _fetchItems();
+      setState(() {
+        selectedIndices.clear();
+        isSelectionMode = false;
+      });
+    } catch (e) {
+      print('Ошибка при удалении: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при удалении: $e')),
+      );
+    }
+  }
+
+  void toggleSelection(int index) {
+    setState(() {
+      if (selectedIndices.contains(index)) {
+        selectedIndices.remove(index);
+      } else {
+        selectedIndices.add(index);
+      }
+      if (selectedIndices.isEmpty) {
+        isSelectionMode = false;
+      }
+    });
   }
 
   @override
@@ -96,71 +157,135 @@ class _TabContentPageState extends State<TabContentPage> {
     print(items);
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.tabName),
+        backgroundColor: const Color.fromARGB(110, 168, 195, 212),
+        title: isSelectionMode
+            ? Text('Выбрано: ${selectedIndices.length}')
+            : Text(widget.tabName),
+        actions: [],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(items[index]['text']),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () {
-                      // Функция для удаления таба
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text('Delete Tab'),
-                            content: Text(
-                                'Are you sure you want to delete this tab?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  deleteItem(items[index]['text'],
-                                      items[index]['tab_name']);
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text('Delete'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  ),
+      floatingActionButton: isSelectionMode
+          ? FloatingActionButton(
+              child: Icon(Icons.delete_outline_outlined),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('Удалить выбранные элементы'),
+                      content: Text(
+                          'Вы уверены, что хотите удалить все выбранные элементы?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Text('Отмена'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop();
+                            await deleteSelectedItems();
+                          },
+                          child: Text('Удалить'),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
+            )
+          : null,
+      body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color.fromARGB(255, 80, 185, 247),
+                const Color.fromARGB(255, 219, 81, 247)
+              ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                labelText: 'Введите текст',
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.add),
-                  onPressed: () {
-                    if (_controller.text.isNotEmpty) {
-                      _createItem(_controller.text);
-                    }
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: Text(items[index]),
+                      onTap: () {
+                        if (isSelectionMode) {
+                          toggleSelection(index);
+                        }
+                      },
+                      onLongPress: () {
+                        setState(() {
+                          isSelectionMode = true;
+                          toggleSelection(index);
+                        });
+                      },
+                      trailing: isSelectionMode
+                          ? Checkbox(
+                              value: selectedIndices.contains(index),
+                              onChanged: (value) {
+                                toggleSelection(index);
+                              },
+                            )
+                          : IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: Text('Delete Tab'),
+                                      content: Text(
+                                          'Are you sure you want to delete this tab?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            deleteItem(items[index]);
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: Text('Delete'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                    );
                   },
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Введите текст',
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.add),
+                      onPressed: () {
+                        if (_nameController.text.isNotEmpty) {
+                          _createItem(_nameController.text);
+                        }
+                      },
+                    ),
+                  ),
+                  maxLength: 40,
+                ),
+              ),
+            ],
+          )),
     );
   }
 }
