@@ -10,6 +10,22 @@ class TabsPage extends StatefulWidget {
 
 class _TabsPageState extends State<TabsPage> {
   List<String> tabs = [];
+  List<DateTime> tabs_dates = [];
+  List<String> months = [
+    'января',
+    'февраля',
+    'марта',
+    'апреля',
+    'мая',
+    'июня',
+    'июля',
+    'августа',
+    'сентября',
+    'октября',
+    'ноября',
+    'декабря',
+  ];
+
   final TextEditingController _nameController = TextEditingController();
   Set<int> selectedIndices = {};
   bool isSelectionMode = false;
@@ -33,9 +49,44 @@ class _TabsPageState extends State<TabsPage> {
           .select('name')
           .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
 
-      print('Данные из базы: $response');
+      //print('Данные из базы: $response');
       setState(() {
         tabs = List<String>.from(response.map((tab) => tab['name'] as String));
+      });
+    } catch (e) {
+      print('Ошибка при загрузке списков: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
+        );
+      }
+    }
+
+    try {
+      final response = await supabase
+          .from('tabs')
+          .select('created_at')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
+
+      //print('Данные из базы: $response');
+      setState(() {
+        tabs_dates = List<DateTime>.from(
+          response.map((tab) {
+            final createdAt = tab['created_at'];
+            if (createdAt != null) {
+              try {
+                return DateTime.parse(createdAt as String);
+              } catch (e) {
+                print('Ошибка при преобразовании даты: $e');
+                return DateTime
+                    .now(); // Возвращаем текущую дату как значение по умолчанию
+              }
+            } else {
+              return DateTime
+                  .now(); // Возвращаем текущую дату как значение по умолчанию
+            }
+          }),
+        );
       });
     } catch (e) {
       print('Ошибка при загрузке списков: $e');
@@ -188,7 +239,10 @@ class _TabsPageState extends State<TabsPage> {
                             Navigator.of(context).pop(); // Закрыть диалог
                             await deleteSelectedTabs(); // Удалить выбранные списки
                           },
-                          child: Text('Удалить'),
+                          child: Text(
+                            'Удалить',
+                            style: TextStyle(color: Colors.red),
+                          ),
                         ),
                       ],
                     );
@@ -212,30 +266,34 @@ class _TabsPageState extends State<TabsPage> {
           child: Column(
             children: [
               //SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Container(
-                    //color: Color.fromARGB(160, 255, 255, 255),
-                    child: TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Название Списка',
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        Icons.add,
-                      ),
-                      onPressed: _nameController.text.isEmpty ||
-                              _nameController.text[0] == ' '
-                          ? null
-                          : addTab,
-                    ),
+
+              Container(
+                  padding: EdgeInsets.all(10.0),
+                  decoration: BoxDecoration(
+                    color: Color.fromARGB(160, 255, 255, 255),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  onChanged: (text) {
-                    setState(() {});
-                  },
-                  maxLength: 40,
-                )),
-              ),
+                  child: TextField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Название Списка',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          Icons.add_circle_outline,
+                        ),
+                        color: Color.fromARGB(220, 36, 182, 0),
+                        onPressed: _nameController.text.isEmpty ||
+                                _nameController.text[0] == ' '
+                            ? null
+                            : addTab,
+                      ),
+                    ),
+                    onChanged: (text) {
+                      setState(() {});
+                    },
+                    maxLength: 40,
+                  )),
+              SizedBox(height: 10),
               /*ElevatedButton(
             onPressed:
                 _nameController.text.isEmpty || _nameController.text[0] == ' '
@@ -247,6 +305,21 @@ class _TabsPageState extends State<TabsPage> {
                 child: ListView.builder(
                   itemCount: tabs.length,
                   itemBuilder: (context, index) {
+                    if (tabs_dates.isEmpty || index >= tabs_dates.length) {
+                      return SizedBox
+                          .shrink(); // Возвращаем пустой виджет, если данных нет
+                    }
+                    String monthIndexStr =
+                        tabs_dates[index].toLocal().toString().substring(5, 7);
+                    String date =
+                        tabs_dates[index].toLocal().toString().substring(8, 10);
+                    if (date[0] == '0') {
+                      date = date.substring(1, 2);
+                    }
+                    String year =
+                        tabs_dates[index].toLocal().toString().substring(0, 4);
+                    int monthIndex = int.parse(monthIndexStr) - 1;
+                    String monthName = months[monthIndex];
                     return Container(
                       decoration: BoxDecoration(
                         color:
@@ -262,6 +335,7 @@ class _TabsPageState extends State<TabsPage> {
                           tabs[index],
                           //style: TextStyle(fontWeight: FontWeight.bold),
                         ),
+                        subtitle: Text('Создано $date $monthName $year'),
                         onTap: () {
                           if (isSelectionMode) {
                             toggleSelection(index);
@@ -314,7 +388,11 @@ class _TabsPageState extends State<TabsPage> {
                                               await deleteTab(
                                                   tabs[index]); // Удалить таб
                                             },
-                                            child: Text('Удалить'),
+                                            child: Text(
+                                              'Удалить',
+                                              style:
+                                                  TextStyle(color: Colors.red),
+                                            ),
                                           ),
                                         ],
                                       );

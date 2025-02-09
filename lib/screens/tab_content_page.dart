@@ -39,7 +39,7 @@ class _TabContentPageState extends State<TabContentPage> {
           .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
           .eq('parent_tab', widget.tabName);
 
-      print('Данные из базы: $response');
+      //print('Данные из базы: $response');
       setState(() {
         items =
             List<String>.from(response.map((item) => item['name'] as String));
@@ -165,6 +165,8 @@ class _TabContentPageState extends State<TabContentPage> {
       ),
       floatingActionButton: isSelectionMode
           ? FloatingActionButton(
+              backgroundColor: const Color.fromARGB(255, 245, 46, 46),
+              foregroundColor: Colors.white,
               child: Icon(Icons.delete_outline_outlined),
               onPressed: () {
                 showDialog(
@@ -186,7 +188,10 @@ class _TabContentPageState extends State<TabContentPage> {
                             Navigator.of(context).pop();
                             await deleteSelectedItems();
                           },
-                          child: Text('Удалить'),
+                          child: Text(
+                            'Удалить',
+                            style: TextStyle(color: Colors.red),
+                          ),
                         ),
                       ],
                     );
@@ -196,6 +201,7 @@ class _TabContentPageState extends State<TabContentPage> {
             )
           : null,
       body: Container(
+          padding: const EdgeInsets.all(10.0),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -208,65 +214,103 @@ class _TabContentPageState extends State<TabContentPage> {
           ),
           child: Column(
             children: [
+              Container(
+                  decoration: BoxDecoration(
+                    color: Color.fromARGB(160, 255, 255, 255),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: EdgeInsets.all(10.0),
+                  child: TextField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Введите текст',
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.add),
+                        onPressed: () {
+                          if (_nameController.text.isNotEmpty) {
+                            _createItem(_nameController.text);
+                          }
+                        },
+                      ),
+                    ),
+                    maxLength: 40,
+                  )),
+              SizedBox(height: 10),
               Expanded(
                 child: ListView.builder(
                   itemCount: items.length,
                   itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(items[index]),
-                      onTap: () {
-                        if (isSelectionMode) {
-                          toggleSelection(index);
-                        }
-                      },
-                      onLongPress: () {
-                        setState(() {
-                          isSelectionMode = true;
-                          toggleSelection(index);
-                        });
-                      },
-                      trailing: isSelectionMode
-                          ? Checkbox(
-                              value: selectedIndices.contains(index),
-                              onChanged: (value) {
-                                toggleSelection(index);
-                              },
-                            )
-                          : IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: Text('Delete Tab'),
-                                      content: Text(
-                                          'Are you sure you want to delete this tab?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: Text('Cancel'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            deleteItem(items[index]);
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: Text('Delete'),
-                                        ),
-                                      ],
+                    return Container(
+                        decoration: BoxDecoration(
+                          color:
+                              selectedIndices.contains(index) && isSelectionMode
+                                  ? Color.fromARGB(255, 245, 163, 163)
+                                  : Color.fromARGB(160, 255, 255, 255),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.all(20.0),
+                        margin: const EdgeInsets.only(bottom: 10.0),
+                        child: ListTile(
+                          title: Text(items[index]),
+                          onTap: () {
+                            if (isSelectionMode) {
+                              toggleSelection(index);
+                            }
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              isSelectionMode = true;
+                              toggleSelection(index);
+                            });
+                          },
+                          trailing: isSelectionMode
+                              ? Checkbox(
+                                  activeColor:
+                                      const Color.fromARGB(255, 236, 37, 23),
+                                  value: selectedIndices.contains(index),
+                                  onChanged: (value) {
+                                    toggleSelection(index);
+                                  },
+                                )
+                              : IconButton(
+                                  icon: Icon(Icons.delete),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          title: Text('Удалить запись'),
+                                          content: Text(
+                                              'Вы уверены, что хотите удалить эту запись?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: Text('Отмена'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                deleteItem(items[index]);
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: Text(
+                                                'Удалить',
+                                                style: TextStyle(
+                                                    color: Colors.red),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     );
                                   },
-                                );
-                              },
-                            ),
-                    );
+                                ),
+                        ));
                   },
                 ),
               ),
-              Padding(
+              /*Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextField(
                   controller: _nameController,
@@ -283,7 +327,7 @@ class _TabContentPageState extends State<TabContentPage> {
                   ),
                   maxLength: 40,
                 ),
-              ),
+              ),*/
             ],
           )),
     );
