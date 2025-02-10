@@ -64,7 +64,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.red, // Задаем цвет текста
                     ),
-                    onPressed: logOut,
+                    //onPressed: logOut,
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text('Выйти из аккаунта'),
+                            content: Text(
+                                'Вы уверены, что хотите выйти из аккаунта?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text('Отмена'),
+                              ),
+                              TextButton(
+                                onPressed: logOut,
+                                child: Text(
+                                  'Выйти',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
                     child: const Text('Log Out'),
                   )
                 ]),

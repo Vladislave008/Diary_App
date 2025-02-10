@@ -225,14 +225,18 @@ class _TabContentPageState extends State<TabContentPage> {
                     decoration: InputDecoration(
                       labelText: 'Введите текст',
                       suffixIcon: IconButton(
-                        icon: Icon(Icons.add),
+                        icon: Icon(
+                          Icons.add_circle_outline,
+                        ),
+                        //color: Color.fromARGB(255, 212, 94, 15),
                         onPressed: () {
-                          if (_nameController.text.isNotEmpty) {
-                            _createItem(_nameController.text);
-                          }
+                          _createItem(_nameController.text);
                         },
                       ),
                     ),
+                    onChanged: (text) {
+                      setState(() {});
+                    },
                     maxLength: 40,
                   )),
               SizedBox(height: 10),

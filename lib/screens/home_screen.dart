@@ -52,12 +52,22 @@ class _NavigationExampleState extends State<NavigationExample> {
       drawer: Drawer(
         child: Center(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              const Text('This is the Drawer'),
+              ElevatedButton(
+                onPressed: () {
+                  if (context.mounted) {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => TabsPage(),
+                    ));
+                  }
+                },
+                child: const Text('Мои Списки'),
+              ),
               ElevatedButton(
                 onPressed: _closeDrawer,
-                child: const Text('Close Drawer'),
+                child: const Text('Закрыть меню'),
               ),
             ],
           ),

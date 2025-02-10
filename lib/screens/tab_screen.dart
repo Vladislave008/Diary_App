@@ -10,6 +10,7 @@ class TabsPage extends StatefulWidget {
 
 class _TabsPageState extends State<TabsPage> {
   List<String> tabs = [];
+  bool isLoading = true;
   List<DateTime> tabs_dates = [];
   List<String> months = [
     'января',
@@ -212,7 +213,13 @@ class _TabsPageState extends State<TabsPage> {
         title: isSelectionMode
             ? Text('Выбрано: ${selectedIndices.length}')
             : Text('Мои Списки'),
-        actions: [],
+        actions: isLoading
+            ? [
+                CircularProgressIndicator(
+                  color: const Color.fromARGB(255, 255, 115, 0),
+                )
+              ]
+            : [],
       ),
       floatingActionButton: isSelectionMode
           ? FloatingActionButton(
@@ -281,7 +288,7 @@ class _TabsPageState extends State<TabsPage> {
                         icon: Icon(
                           Icons.add_circle_outline,
                         ),
-                        color: Color.fromARGB(220, 36, 182, 0),
+                        color: Color.fromARGB(255, 212, 94, 15),
                         onPressed: _nameController.text.isEmpty ||
                                 _nameController.text[0] == ' '
                             ? null
@@ -306,6 +313,8 @@ class _TabsPageState extends State<TabsPage> {
                   itemCount: tabs.length,
                   itemBuilder: (context, index) {
                     if (tabs_dates.isEmpty || index >= tabs_dates.length) {
+                      isLoading = false;
+
                       return SizedBox
                           .shrink(); // Возвращаем пустой виджет, если данных нет
                     }
