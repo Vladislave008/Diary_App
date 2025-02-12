@@ -133,4 +133,5 @@ if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, log_level="info")
     
 # python C:/Users/BAAL/Desktop/diary_app/lib/main.py
-# adb connect 172.25.0.9:5555
+# adb shell ip route
+# adb connect 172.25.0.8:5555

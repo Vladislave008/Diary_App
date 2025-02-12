@@ -28,6 +28,8 @@ class _TabsPageState extends State<TabsPage> {
   ];
 
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _newnameController = TextEditingController();
+
   Set<int> selectedIndices = {};
   bool isSelectionMode = false;
 
@@ -140,6 +142,49 @@ class _TabsPageState extends State<TabsPage> {
     }
   }
 
+  Future<void> updateTab(String tabName) async {
+    if (_newnameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Введите название списка')),
+      );
+      return;
+    }
+    if (_newnameController.text[0] == ' ') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Название списка не может быть пустым или начинаться с пробела')),
+      );
+      return;
+    }
+    if (tabs.contains(_newnameController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Такая вкладка уже существует')),
+      );
+      return;
+    }
+
+    try {
+      await supabase
+          .from('tabs_items')
+          .update({'parent_tab': _newnameController.text})
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('parent_tab', tabName);
+
+      await supabase
+          .from('tabs')
+          .update({'name': _newnameController.text})
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('name', tabName);
+
+      _newnameController.clear();
+      await fetchTabs();
+      print('Tabupdated successfully');
+    } catch (e) {
+      print('Error updating tab: $e');
+    }
+  }
+
   Future<void> deleteTab(String tabName) async {
     print('delete tab ${tabName}');
     try {
@@ -213,13 +258,13 @@ class _TabsPageState extends State<TabsPage> {
         title: isSelectionMode
             ? Text('Выбрано: ${selectedIndices.length}')
             : Text('Мои Списки'),
-        actions: isLoading
+        /*actions: isLoading
             ? [
                 CircularProgressIndicator(
                   color: const Color.fromARGB(255, 255, 115, 0),
                 )
               ]
-            : [],
+            : [],*/
       ),
       floatingActionButton: isSelectionMode
           ? FloatingActionButton(
@@ -372,43 +417,105 @@ class _TabsPageState extends State<TabsPage> {
                                   toggleSelection(index);
                                 },
                               )
-                            : IconButton(
-                                icon: Icon(Icons.delete_outline_outlined),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        title: Text('Удалить Список'),
-                                        content: Text(
-                                            'Вы уверены, что хотите удалить список ${tabs[index]}?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context)
-                                                  .pop(); // Закрыть диалог
-                                            },
-                                            child: Text('Отмена'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () async {
-                                              Navigator.of(context)
-                                                  .pop(); // Закрыть диалог
-                                              await deleteTab(
-                                                  tabs[index]); // Удалить таб
-                                            },
-                                            child: Text(
-                                              'Удалить',
-                                              style:
-                                                  TextStyle(color: Colors.red),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                    IconButton(
+                                      icon: Icon(Icons.edit_outlined),
+                                      onPressed: () {
+                                        setState(() {
+                                          _newnameController.text = tabs[index];
+                                        });
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: Text('Обновить Список'),
+                                              content: TextField(
+                                                controller: _newnameController,
+                                                decoration: InputDecoration(
+                                                  labelText:
+                                                      'Новое название списка',
+                                                ),
+                                                onChanged: (text) {
+                                                  setState(() {});
+                                                },
+                                                maxLength: 40,
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                    setState(() {
+                                                      _newnameController
+                                                          .clear();
+                                                    });
+                                                  },
+                                                  child: Text(
+                                                    'Отмена',
+                                                    style: TextStyle(
+                                                        color: Colors.red),
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () async {
+                                                    Navigator.of(context).pop();
+                                                    await updateTab(
+                                                        tabs[index]);
+                                                    setState(() {
+                                                      _newnameController
+                                                          .clear();
+                                                    });
+                                                  },
+                                                  child: Text(
+                                                    'Готово',
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete_outline_outlined),
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: Text('Удалить Список'),
+                                              content: Text(
+                                                  'Вы уверены, что хотите удалить список ${tabs[index]}?'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context)
+                                                        .pop(); // Закрыть диалог
+                                                  },
+                                                  child: Text('Отмена'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () async {
+                                                    Navigator.of(context)
+                                                        .pop(); // Закрыть диалог
+                                                    await deleteTab(tabs[
+                                                        index]); // Удалить таб
+                                                  },
+                                                  child: Text(
+                                                    'Удалить',
+                                                    style: TextStyle(
+                                                        color: Colors.red),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                    )
+                                  ]),
                       ),
                     );
                   },
