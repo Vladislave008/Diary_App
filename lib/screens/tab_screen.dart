@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:namer_app/screens/tab_content_page.dart';
+import 'package:namer_app/screens/home_screen.dart';
 
 class TabsPage extends StatefulWidget {
   @override
@@ -258,13 +259,33 @@ class _TabsPageState extends State<TabsPage> {
         title: isSelectionMode
             ? Text('Выбрано: ${selectedIndices.length}')
             : Text('Мои Списки'),
-        /*actions: isLoading
+        actions: isLoading
             ? [
                 CircularProgressIndicator(
-                  color: const Color.fromARGB(255, 255, 115, 0),
-                )
+                  strokeWidth: 3,
+                  //color: const Color.fromARGB(255, 255, 115, 0),
+                ),
+                IconButton(
+                    onPressed: () {
+                      if (context.mounted) {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => NavigationExample(),
+                        ));
+                      }
+                    },
+                    icon: Icon(Icons.home_rounded)),
               ]
-            : [],*/
+            : [
+                IconButton(
+                    onPressed: () {
+                      if (context.mounted) {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => NavigationExample(),
+                        ));
+                      }
+                    },
+                    icon: Icon(Icons.home_rounded))
+              ],
       ),
       floatingActionButton: isSelectionMode
           ? FloatingActionButton(
@@ -419,6 +440,7 @@ class _TabsPageState extends State<TabsPage> {
                               )
                             : Row(
                                 mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.end,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                     IconButton(
@@ -431,7 +453,7 @@ class _TabsPageState extends State<TabsPage> {
                                           context: context,
                                           builder: (context) {
                                             return AlertDialog(
-                                              title: Text('Обновить Список'),
+                                              title: Text('Обновить список'),
                                               content: TextField(
                                                 controller: _newnameController,
                                                 decoration: InputDecoration(

@@ -23,20 +23,9 @@ class _NavigationExampleState extends State<NavigationExample> {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-          title: const Text('AppBar Demo'),
+          title: const Text('Diary App'),
           backgroundColor: const Color.fromARGB(110, 168, 195, 212),
           actions: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.ac_unit_outlined),
-              tooltip: 'Test',
-              onPressed: () {
-                if (context.mounted) {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => TabsPage(),
-                  ));
-                }
-              },
-            ),
             IconButton(
               icon: const Icon(Icons.settings),
               tooltip: 'Settings',
@@ -51,35 +40,67 @@ class _NavigationExampleState extends State<NavigationExample> {
           ]),
       drawer: Drawer(
         child: Center(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              ElevatedButton(
-                onPressed: () {
-                  if (context.mounted) {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => TabsPage(),
-                    ));
-                  }
-                },
-                child: const Text('Мои Списки'),
+          child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color.fromARGB(255, 80, 185, 247),
+                    const Color.fromARGB(255, 219, 81, 247)
+                  ],
+                ),
               ),
-              ElevatedButton(
-                onPressed: _closeDrawer,
-                child: const Text('Закрыть меню'),
-              ),
-            ],
-          ),
+              //padding: EdgeInsets.all(15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    //padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Color.fromARGB(110, 168, 195, 212)),
+                    child: Image.asset(
+                      'assets/images/bar_image.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                if (context.mounted) {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => TabsPage(),
+                                  ));
+                                }
+                              },
+                              icon: Icon(Icons.format_list_numbered),
+                              label: const Text('Мои Списки'),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: _closeDrawer,
+                              icon: Icon(Icons.close),
+                              label: const Text('Закрыть меню'),
+                            )
+                          ])),
+                ],
+              )),
         ),
       ),
       bottomNavigationBar: NavigationBar(
+        backgroundColor: const Color.fromARGB(110, 168, 195, 212),
         onDestinationSelected: (int index) {
           setState(() {
             currentPageIndex = index;
           });
         },
-        indicatorColor: Colors.amber,
+        indicatorColor: const Color.fromARGB(255, 248, 149, 83),
         selectedIndex: currentPageIndex,
         destinations: const <Widget>[
           NavigationDestination(
@@ -102,9 +123,19 @@ class _NavigationExampleState extends State<NavigationExample> {
       ),
       body: <Widget>[
         /// Home page
-        Card(
-          shadowColor: Colors.transparent,
-          margin: const EdgeInsets.all(8.0),
+        Container(
+          //shadowColor: Colors.transparent,
+          //margin: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color.fromARGB(255, 80, 185, 247),
+                const Color.fromARGB(255, 219, 81, 247)
+              ],
+            ),
+          ),
           child: SizedBox.expand(
             child: Center(
               child: Text(
@@ -114,9 +145,19 @@ class _NavigationExampleState extends State<NavigationExample> {
             ),
           ),
         ),
-        Card(
-          shadowColor: Colors.transparent,
-          margin: const EdgeInsets.all(8.0),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color.fromARGB(255, 80, 185, 247),
+                const Color.fromARGB(255, 219, 81, 247)
+              ],
+            ),
+          ),
+          //shadowColor: Colors.transparent,
+          //margin: const EdgeInsets.all(8.0),
           child: SizedBox.expand(
             child: Center(
               child: Text(
@@ -129,9 +170,19 @@ class _NavigationExampleState extends State<NavigationExample> {
 
         /// Notifications page
 
-        Card(
-          shadowColor: Colors.transparent,
-          margin: const EdgeInsets.all(8.0),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color.fromARGB(255, 80, 185, 247),
+                const Color.fromARGB(255, 219, 81, 247)
+              ],
+            ),
+          ),
+          //shadowColor: Colors.transparent,
+          //margin: const EdgeInsets.all(8.0),
           child: SizedBox.expand(
             child: Center(
               child: Text(
