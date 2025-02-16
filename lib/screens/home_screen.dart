@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:namer_app/screens/settings_screen.dart';
 //import 'package:namer_app/screens/test_screen.dart';
 import 'package:namer_app/screens/tab_screen.dart';
+import 'package:namer_app/screens/notes_screen.dart';
 
 class NavigationExample extends StatefulWidget {
   const NavigationExample({super.key});
@@ -82,6 +83,17 @@ class _NavigationExampleState extends State<NavigationExample> {
                               },
                               icon: Icon(Icons.format_list_numbered),
                               label: const Text('Мои Списки'),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                if (context.mounted) {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => NotesScreen(),
+                                  ));
+                                }
+                              },
+                              icon: Icon(Icons.format_list_numbered),
+                              label: const Text('Заметки'),
                             ),
                             ElevatedButton.icon(
                               onPressed: _closeDrawer,

@@ -1,4 +1,4 @@
-//import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:namer_app/firebase_service.dart';
@@ -22,6 +22,8 @@ void main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvaHJ4a3NocHBlbGJ6aHhuYmF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg0NDE1MTcsImV4cCI6MjA1NDAxNzUxN30.4aCiPbdMrQE6rmBbAw5PvEHLSL88jVe9lUYshcnGW-E',
   );
 
+  await FirebaseAuth.instance.signOut();
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => ContextProvider(), // Создаем экземпляр вашего провайдера
@@ -39,7 +41,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();

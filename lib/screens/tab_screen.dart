@@ -261,10 +261,10 @@ class _TabsPageState extends State<TabsPage> {
             : Text('Мои Списки'),
         actions: isLoading
             ? [
-                CircularProgressIndicator(
+                /*CircularProgressIndicator(
                   strokeWidth: 3,
                   //color: const Color.fromARGB(255, 255, 115, 0),
-                ),
+                ),*/
                 IconButton(
                     onPressed: () {
                       if (context.mounted) {
