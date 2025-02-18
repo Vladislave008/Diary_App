@@ -92,7 +92,7 @@ class _NavigationExampleState extends State<NavigationExample> {
                                   ));
                                 }
                               },
-                              icon: Icon(Icons.format_list_numbered),
+                              icon: Icon(Icons.event_note),
                               label: const Text('Заметки'),
                             ),
                             ElevatedButton.icon(

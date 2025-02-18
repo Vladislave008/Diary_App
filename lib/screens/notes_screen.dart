@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:namer_app/firebase_service.dart';
 import 'package:namer_app/screens/home_screen.dart';
-
+import 'package:namer_app/screens/note_content_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -27,6 +27,16 @@ class _NotesScreenState extends State<NotesScreen> {
   @override
   void initState() {
     super.initState();
+    fetchNotes();
+  }
+
+  Future<void> _navigateToNoteContentPage(String NoteName) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => NoteContentPage(NoteName: NoteName)),
+    );
+
     fetchNotes();
   }
 
@@ -58,7 +68,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
   Future<void> addNote() async {
     try {
-      String now = DateTime.now().toLocal().toString();
+      String now = '-*-*-*--' + DateTime.now().toLocal().toString();
 
       await supabase.from('notes').insert([
         {'name': now, 'user_id': FirebaseAuth.instance.currentUser!.uid}
@@ -115,25 +125,7 @@ class _NotesScreenState extends State<NotesScreen> {
     }
   }
 
-  Future<void> deleteTab(String noteName) async {
-    print('delete tab ${noteName}');
-    try {
-      await supabase
-          .from('notes')
-          .delete()
-          .eq('name', noteName)
-          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
-
-      await fetchNotes();
-    } catch (e) {
-      print('Ошибка при удалении таба: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при удалении таба: $e')),
-      );
-    }
-  }
-
-  Future<void> deleteSelectedTabs() async {
+  Future<void> deleteSelectedNotes() async {
     try {
       for (int index in selectedIndices) {
         await supabase
@@ -172,6 +164,16 @@ class _NotesScreenState extends State<NotesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.mounted) {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => NavigationExample(),
+              ));
+            }
+          },
+        ),
         backgroundColor: const Color.fromARGB(110, 168, 195, 212),
         title: isSelectionMode
             ? Text('Выбрано: ${selectedIndices.length}')
@@ -227,7 +229,7 @@ class _NotesScreenState extends State<NotesScreen> {
                         TextButton(
                           onPressed: () async {
                             Navigator.of(context).pop(); // Закрыть диалог
-                            //await deleteSelectedTabs(); // Удалить выбранные списки
+                            await deleteSelectedNotes(); // Удалить выбранные списки
                           },
                           child: Text(
                             'Удалить',
@@ -243,8 +245,8 @@ class _NotesScreenState extends State<NotesScreen> {
           : FloatingActionButton(
               backgroundColor: const Color.fromARGB(255, 245, 136, 46),
               foregroundColor: Colors.white,
-              child: Icon(Icons.create_rounded),
               onPressed: addNote,
+              child: Icon(Icons.add_rounded),
             ),
       body: Container(
           padding: const EdgeInsets.all(10.0),
@@ -260,36 +262,6 @@ class _NotesScreenState extends State<NotesScreen> {
           ),
           child: Column(
             children: [
-              //SizedBox(height: 10),
-
-              Container(
-                  padding: EdgeInsets.all(10.0),
-                  decoration: BoxDecoration(
-                    color: Color.fromARGB(160, 255, 255, 255),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Название заметки',
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          Icons.add_circle_outline,
-                        ),
-                        color: Color.fromARGB(255, 212, 94, 15),
-                        onPressed: _nameController.text.isEmpty ||
-                                _nameController.text[0] == ' '
-                            ? null
-                            : addNote,
-                      ),
-                    ),
-                    onChanged: (text) {
-                      setState(() {});
-                    },
-                    maxLength: 40,
-                  )),
-              SizedBox(height: 10),
-
               Expanded(
                 child: ListView.builder(
                   itemCount: (notes.length / 2).ceil(),
@@ -298,33 +270,90 @@ class _NotesScreenState extends State<NotesScreen> {
 
                     int secondIndex = firstIndex + 1;
 
+                    String name1 = ' ';
+                    String name2 = ' ';
+
+                    if (firstIndex < notes.length) {
+                      if (notes[firstIndex].contains('-*-*-*--')) {
+                        name1 = '';
+                      } else if (notes[firstIndex].length > 35) {
+                        name1 = notes[firstIndex].substring(0, 30) + '...';
+                      } else if (notes[firstIndex].length <= 35) {
+                        name1 = notes[firstIndex];
+                      }
+                    }
+
+                    if (secondIndex < notes.length) {
+                      if (notes[secondIndex].contains('-*-*-*--')) {
+                        name2 = '';
+                      } else if (notes[secondIndex].length > 35) {
+                        name2 = notes[secondIndex].substring(0, 30) + '...';
+                      } else if (notes[secondIndex].length <= 35) {
+                        name2 = notes[secondIndex];
+                      }
+                    }
                     return Row(
                       children: [
-                        // Первый контейнер
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Color.fromARGB(160, 255, 255, 255),
+                              color: selectedIndices.contains(firstIndex) &&
+                                      isSelectionMode
+                                  ? Color.fromARGB(255, 245, 163, 163)
+                                  : Color.fromARGB(160, 255, 255, 255),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             margin: EdgeInsets.all(8.0),
                             height: 100,
-                            child: Center(child: Text(notes[firstIndex])),
+                            child: ListTile(
+                              title: Text(name1),
+                              onLongPress: () {
+                                setState(() {
+                                  isSelectionMode = true;
+                                  toggleSelection(firstIndex);
+                                });
+                              },
+                              onTap: () {
+                                if (isSelectionMode) {
+                                  toggleSelection(firstIndex);
+                                } else {
+                                  _navigateToNoteContentPage(notes[firstIndex]);
+                                }
+                              },
+                            ),
                           ),
                         ),
                         if (secondIndex < notes.length)
                           Expanded(
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Color.fromARGB(160, 255, 255, 255),
+                                color: selectedIndices.contains(secondIndex) &&
+                                        isSelectionMode
+                                    ? Color.fromARGB(255, 245, 163, 163)
+                                    : Color.fromARGB(160, 255, 255, 255),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               margin: EdgeInsets.all(8.0),
                               height: 100,
-                              child: Center(child: Text(notes[secondIndex])),
+                              child: ListTile(
+                                title: Text(name2),
+                                onLongPress: () {
+                                  setState(() {
+                                    isSelectionMode = true;
+                                    toggleSelection(secondIndex);
+                                  });
+                                },
+                                onTap: () {
+                                  if (isSelectionMode) {
+                                    toggleSelection(secondIndex);
+                                  } else {
+                                    _navigateToNoteContentPage(
+                                        notes[secondIndex]);
+                                  }
+                                },
+                              ),
                             ),
                           ),
-
                         if (secondIndex >= notes.length)
                           Expanded(
                             child: Container(),

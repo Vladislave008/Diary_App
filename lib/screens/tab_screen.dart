@@ -187,7 +187,7 @@ class _TabsPageState extends State<TabsPage> {
   }
 
   Future<void> deleteTab(String tabName) async {
-    print('delete tab ${tabName}');
+    print('delete tab $tabName');
     try {
       await supabase
           .from('tabs')
