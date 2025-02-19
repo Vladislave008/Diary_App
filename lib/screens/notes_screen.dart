@@ -17,7 +17,7 @@ class _NotesScreenState extends State<NotesScreen> {
   List<String> notes = [];
   Set<int> selectedIndices = {};
   bool isSelectionMode = false;
-  bool isLoading = true;
+  bool isLoading = false;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _newnameController = TextEditingController();
 
@@ -41,8 +41,16 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Future<void> fetchNotes() async {
+    setState(() {
+      isLoading = true;
+    });
+
     if (FirebaseAuth.instance.currentUser == null) {
       print('User not logged in');
+      setState(() {
+        isLoading = false;
+      });
+
       return;
     }
     try {
@@ -55,6 +63,9 @@ class _NotesScreenState extends State<NotesScreen> {
       setState(() {
         notes =
             List<String>.from(response.map((note) => note['name'] as String));
+      });
+      setState(() {
+        isLoading = false;
       });
     } catch (e) {
       print('Ошибка при загрузке списков: $e');
@@ -178,12 +189,12 @@ class _NotesScreenState extends State<NotesScreen> {
         title: isSelectionMode
             ? Text('Выбрано: ${selectedIndices.length}')
             : Text('Заметки'),
-        actions: isLoading
+        actions: isLoading == true
             ? [
-                /*CircularProgressIndicator(
+                CircularProgressIndicator(
                   strokeWidth: 3,
                   //color: const Color.fromARGB(255, 255, 115, 0),
-                ),*/
+                ),
                 IconButton(
                     onPressed: () {
                       if (context.mounted) {

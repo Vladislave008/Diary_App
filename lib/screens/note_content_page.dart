@@ -17,7 +17,7 @@ class NoteContentPage extends StatefulWidget {
 class _NoteContentPageState extends State<NoteContentPage> {
   final FirebaseService firebaseService = FirebaseService();
   final SupabaseClient supabase = Supabase.instance.client;
-
+  List<String> notes = [];
   final TextEditingController _nameController = TextEditingController();
 
   @override
@@ -42,6 +42,27 @@ class _NoteContentPageState extends State<NoteContentPage> {
         SnackBar(
             content:
                 Text('Текст не может быть пустым или начинаться с пробела')),
+      );
+      return;
+    }
+
+    try {
+      final response = await supabase
+          .from('notes')
+          .select('name')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
+
+      setState(() {
+        notes =
+            List<String>.from(response.map((note) => note['name'] as String));
+      });
+    } catch (e) {
+      print('error');
+    }
+
+    if (notes.contains(_nameController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Такая заметка уже существует')),
       );
       return;
     }

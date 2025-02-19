@@ -11,7 +11,8 @@ class TabsPage extends StatefulWidget {
 
 class _TabsPageState extends State<TabsPage> {
   List<String> tabs = [];
-  bool isLoading = true;
+  List<bool> pins = [];
+  bool isLoading = false;
   List<DateTime> tabs_dates = [];
   List<String> months = [
     'января',
@@ -43,8 +44,14 @@ class _TabsPageState extends State<TabsPage> {
   final SupabaseClient supabase = Supabase.instance.client;
 
   Future<void> fetchTabs() async {
+    setState(() {
+      isLoading = true;
+    });
     if (FirebaseAuth.instance.currentUser == null) {
       print('User not logged in');
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
     try {
@@ -53,9 +60,12 @@ class _TabsPageState extends State<TabsPage> {
           .select('name')
           .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
 
-      //print('Данные из базы: $response');
+      print('Данные из базы: $response');
       setState(() {
         tabs = List<String>.from(response.map((tab) => tab['name'] as String));
+      });
+      setState(() {
+        isLoading = false;
       });
     } catch (e) {
       print('Ошибка при загрузке списков: $e');
@@ -139,6 +149,43 @@ class _TabsPageState extends State<TabsPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка при добавлении списка: $e')),
         );
+      }
+    }
+  }
+
+  Future<void> pinTab(String tabName) async {
+    final response = await supabase
+        .from('tabs')
+        .select('pin')
+        .eq('name', tabName)
+        .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
+    pins = List<bool>.from(response.map((tab) => tab['pin'] as bool));
+
+    if (pins[0] == false) {
+      try {
+        await supabase
+            .from('tabs')
+            .update({'pin': true})
+            .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+            .eq('name', tabName);
+
+        await fetchTabs();
+        print('Tabupdated successfully');
+      } catch (e) {
+        print('Error updating tab: $e');
+      }
+    } else if (pins[0] == true) {
+      try {
+        await supabase
+            .from('tabs')
+            .update({'pin': false})
+            .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+            .eq('name', tabName);
+
+        await fetchTabs();
+        print('Tabupdated successfully');
+      } catch (e) {
+        print('Error updating tab: $e');
       }
     }
   }
@@ -261,10 +308,10 @@ class _TabsPageState extends State<TabsPage> {
             : Text('Мои Списки'),
         actions: isLoading
             ? [
-                /*CircularProgressIndicator(
+                CircularProgressIndicator(
                   strokeWidth: 3,
                   //color: const Color.fromARGB(255, 255, 115, 0),
-                ),*/
+                ),
                 IconButton(
                     onPressed: () {
                       if (context.mounted) {
@@ -344,16 +391,14 @@ class _TabsPageState extends State<TabsPage> {
                   padding: EdgeInsets.all(10.0),
                   decoration: BoxDecoration(
                     color: Color.fromARGB(160, 255, 255, 255),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(30),
                   ),
                   child: TextField(
                     controller: _nameController,
                     decoration: InputDecoration(
                       labelText: 'Название Списка',
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          Icons.add_circle_outline,
-                        ),
+                        icon: Icon(Icons.add_circle_outline, size: 30),
                         color: Color.fromARGB(255, 212, 94, 15),
                         onPressed: _nameController.text.isEmpty ||
                                 _nameController.text[0] == ' '
@@ -501,6 +546,13 @@ class _TabsPageState extends State<TabsPage> {
                                       },
                                     ),
                                     IconButton(
+                                      icon: Icon(Icons.star_outline_rounded),
+                                      selectedIcon: Icon(Icons.star_rounded),
+                                      onPressed: () {
+                                        pinTab(tabs[index]);
+                                      },
+                                    ),
+                                    /*IconButton(
                                       icon: Icon(Icons.delete_outline_outlined),
                                       onPressed: () {
                                         showDialog(
@@ -522,7 +574,7 @@ class _TabsPageState extends State<TabsPage> {
                                                   onPressed: () async {
                                                     Navigator.of(context)
                                                         .pop(); // Закрыть диалог
-                                                    await deleteTab(tabs[
+                                                    await pinTab(tabs[
                                                         index]); // Удалить таб
                                                   },
                                                   child: Text(
@@ -536,7 +588,7 @@ class _TabsPageState extends State<TabsPage> {
                                           },
                                         );
                                       },
-                                    )
+                                    ),*/
                                   ]),
                       ),
                     );
