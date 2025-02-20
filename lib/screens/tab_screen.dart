@@ -11,9 +11,17 @@ class TabsPage extends StatefulWidget {
 
 class _TabsPageState extends State<TabsPage> {
   List<String> tabs = [];
+  List<String> tabs_pinned = [];
+  List<String> tabs_not_pinned = [];
+
   List<bool> pins = [];
+  List<bool> pins_pinned = [];
+  List<bool> pins_not_pinned = [];
+
   bool isLoading = false;
   List<DateTime> tabs_dates = [];
+  List<DateTime> tabs_dates_pinned = [];
+  List<DateTime> tabs_dates_not_pinned = [];
   List<String> months = [
     'января',
     'февраля',
@@ -54,18 +62,69 @@ class _TabsPageState extends State<TabsPage> {
       });
       return;
     }
+
     try {
-      final response = await supabase
+      final response1 = await supabase
           .from('tabs')
           .select('name')
-          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('pin', true);
 
-      print('Данные из базы: $response');
       setState(() {
-        tabs = List<String>.from(response.map((tab) => tab['name'] as String));
+        tabs_pinned =
+            List<String>.from(response1.map((tab) => tab['name'] as String));
       });
+
+      final response2 = await supabase
+          .from('tabs')
+          .select('name')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('pin', false);
+
       setState(() {
-        isLoading = false;
+        tabs_not_pinned =
+            List<String>.from(response2.map((tab) => tab['name'] as String));
+      });
+
+      setState(() {
+        tabs =
+            tabs_pinned.reversed.toList() + tabs_not_pinned.reversed.toList();
+      });
+    } catch (e) {
+      print('Ошибка при загрузке списков: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
+        );
+      }
+    }
+
+    try {
+      final response1 = await supabase
+          .from('tabs')
+          .select('pin')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('pin', true);
+
+      setState(() {
+        pins_pinned =
+            List<bool>.from(response1.map((tab) => tab['pin'] as bool));
+      });
+
+      final response2 = await supabase
+          .from('tabs')
+          .select('pin')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('pin', false);
+
+      setState(() {
+        pins_not_pinned =
+            List<bool>.from(response2.map((tab) => tab['pin'] as bool));
+      });
+
+      setState(() {
+        pins =
+            pins_pinned.reversed.toList() + pins_not_pinned.reversed.toList();
       });
     } catch (e) {
       print('Ошибка при загрузке списков: $e');
@@ -80,11 +139,11 @@ class _TabsPageState extends State<TabsPage> {
       final response = await supabase
           .from('tabs')
           .select('created_at')
-          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('pin', true);
 
-      //print('Данные из базы: $response');
       setState(() {
-        tabs_dates = List<DateTime>.from(
+        tabs_dates_pinned = List<DateTime>.from(
           response.map((tab) {
             final createdAt = tab['created_at'];
             if (createdAt != null) {
@@ -110,6 +169,45 @@ class _TabsPageState extends State<TabsPage> {
         );
       }
     }
+    try {
+      final response = await supabase
+          .from('tabs')
+          .select('created_at')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('pin', false);
+
+      setState(() {
+        tabs_dates_not_pinned = List<DateTime>.from(
+          response.map((tab) {
+            final createdAt = tab['created_at'];
+            if (createdAt != null) {
+              try {
+                return DateTime.parse(createdAt as String);
+              } catch (e) {
+                print('Ошибка при преобразовании даты: $e');
+                return DateTime
+                    .now(); // Возвращаем текущую дату как значение по умолчанию
+              }
+            } else {
+              return DateTime
+                  .now(); // Возвращаем текущую дату как значение по умолчанию
+            }
+          }),
+        );
+      });
+    } catch (e) {
+      print('Ошибка при загрузке списков: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
+        );
+      }
+    }
+    setState(() {
+      tabs_dates = tabs_dates_pinned.reversed.toList() +
+          tabs_dates_not_pinned.reversed.toList();
+      isLoading = false;
+    });
   }
 
   Future<void> addTab() async {
@@ -153,34 +251,27 @@ class _TabsPageState extends State<TabsPage> {
     }
   }
 
-  Future<void> pinTab(String tabName) async {
-    final response = await supabase
-        .from('tabs')
-        .select('pin')
-        .eq('name', tabName)
-        .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
-    pins = List<bool>.from(response.map((tab) => tab['pin'] as bool));
-
-    if (pins[0] == false) {
+  Future<void> pinTab(int index) async {
+    if (pins[index] == false) {
       try {
         await supabase
             .from('tabs')
             .update({'pin': true})
             .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
-            .eq('name', tabName);
+            .eq('name', tabs[index]);
 
         await fetchTabs();
         print('Tabupdated successfully');
       } catch (e) {
         print('Error updating tab: $e');
       }
-    } else if (pins[0] == true) {
+    } else if (pins[index] == true) {
       try {
         await supabase
             .from('tabs')
             .update({'pin': false})
             .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
-            .eq('name', tabName);
+            .eq('name', tabs[index]);
 
         await fetchTabs();
         print('Tabupdated successfully');
@@ -258,6 +349,9 @@ class _TabsPageState extends State<TabsPage> {
   }
 
   Future<void> deleteSelectedTabs() async {
+    setState(() {
+      isSelectionMode = false;
+    });
     try {
       for (int index in selectedIndices) {
         await supabase
@@ -272,11 +366,12 @@ class _TabsPageState extends State<TabsPage> {
             .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
             .eq('parent_tab', tabs[index]);
       }
-      await fetchTabs();
+
       setState(() {
         selectedIndices.clear();
         isSelectionMode = false;
       });
+      await fetchTabs();
     } catch (e) {
       print('Ошибка при удалении табов: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -398,12 +493,9 @@ class _TabsPageState extends State<TabsPage> {
                     decoration: InputDecoration(
                       labelText: 'Название Списка',
                       suffixIcon: IconButton(
-                        icon: Icon(Icons.add_circle_outline, size: 30),
-                        color: Color.fromARGB(255, 212, 94, 15),
-                        onPressed: _nameController.text.isEmpty ||
-                                _nameController.text[0] == ' '
-                            ? null
-                            : addTab,
+                        icon: Icon(Icons.add_circle_outline),
+                        //color: Color.fromARGB(255, 212, 94, 15),
+                        onPressed: addTab,
                       ),
                     ),
                     onChanged: (text) {
@@ -546,10 +638,17 @@ class _TabsPageState extends State<TabsPage> {
                                       },
                                     ),
                                     IconButton(
-                                      icon: Icon(Icons.star_outline_rounded),
+                                      icon: Icon(
+                                          pins[index]
+                                              ? Icons.star_rounded
+                                              : Icons.star_outline_rounded,
+                                          color: pins[index]
+                                              ? const Color.fromARGB(
+                                                  255, 238, 143, 0)
+                                              : null),
                                       selectedIcon: Icon(Icons.star_rounded),
                                       onPressed: () {
-                                        pinTab(tabs[index]);
+                                        pinTab(index);
                                       },
                                     ),
                                     /*IconButton(

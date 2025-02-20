@@ -14,7 +14,15 @@ class NotesScreen extends StatefulWidget {
 
 class _NotesScreenState extends State<NotesScreen> {
   int currentPageIndex = 0;
+
+  List<String> notes_pinned = [];
+  List<String> notes_not_pinned = [];
   List<String> notes = [];
+
+  List<bool> pins = [];
+  List<bool> pins_pinned = [];
+  List<bool> pins_not_pinned = [];
+
   Set<int> selectedIndices = {};
   bool isSelectionMode = false;
   bool isLoading = false;
@@ -54,18 +62,26 @@ class _NotesScreenState extends State<NotesScreen> {
       return;
     }
     try {
-      final response = await supabase
+      final response1 = await supabase
           .from('notes')
           .select('name')
-          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('pin', true);
 
-      //print('Данные из базы: $response');
       setState(() {
-        notes =
-            List<String>.from(response.map((note) => note['name'] as String));
+        notes_pinned =
+            List<String>.from(response1.map((note) => note['name'] as String));
       });
+
+      final response2 = await supabase
+          .from('notes')
+          .select('name')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('pin', false);
+
       setState(() {
-        isLoading = false;
+        notes_not_pinned =
+            List<String>.from(response2.map((note) => note['name'] as String));
       });
     } catch (e) {
       print('Ошибка при загрузке списков: $e');
@@ -75,6 +91,46 @@ class _NotesScreenState extends State<NotesScreen> {
         );
       }
     }
+
+    setState(() {
+      notes =
+          notes_pinned.reversed.toList() + notes_not_pinned.reversed.toList();
+    });
+
+    try {
+      final response1 = await supabase
+          .from('notes')
+          .select('pin')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('pin', true);
+
+      setState(() {
+        pins_pinned =
+            List<bool>.from(response1.map((note) => note['pin'] as bool));
+      });
+
+      final response2 = await supabase
+          .from('notes')
+          .select('pin')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('pin', false);
+
+      setState(() {
+        pins_not_pinned =
+            List<bool>.from(response2.map((note) => note['pin'] as bool));
+      });
+    } catch (e) {
+      print('Ошибка при загрузке списков: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
+        );
+      }
+    }
+    setState(() {
+      pins = pins_pinned.reversed.toList() + pins_not_pinned.reversed.toList();
+      isLoading = false;
+    });
   }
 
   Future<void> addNote() async {
@@ -97,6 +153,37 @@ class _NotesScreenState extends State<NotesScreen> {
         );
       }
     }
+  }
+
+  Future<void> pinNote(int index) async {
+    if (pins[index] == false) {
+      try {
+        await supabase
+            .from('notes')
+            .update({'pin': true})
+            .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+            .eq('name', notes[index]);
+
+        //await fetchNotes();
+        print('Tabupdated successfully');
+      } catch (e) {
+        print('Error updating tab: $e');
+      }
+    } else if (pins[index] == true) {
+      try {
+        await supabase
+            .from('notes')
+            .update({'pin': false})
+            .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+            .eq('name', notes[index]);
+
+        await fetchNotes();
+        print('Tabupdated successfully');
+      } catch (e) {
+        print('Error updating tab: $e');
+      }
+    }
+    await fetchNotes();
   }
 
   Future<void> updateNote(String noteName) async {
@@ -277,6 +364,12 @@ class _NotesScreenState extends State<NotesScreen> {
                 child: ListView.builder(
                   itemCount: (notes.length / 2).ceil(),
                   itemBuilder: (context, index) {
+                    if (notes.isEmpty || index >= notes.length) {
+                      isLoading = false;
+
+                      return SizedBox
+                          .shrink(); // Возвращаем пустой виджет, если данных нет
+                    }
                     int firstIndex = index * 2;
 
                     int secondIndex = firstIndex + 1;
@@ -287,9 +380,9 @@ class _NotesScreenState extends State<NotesScreen> {
                     if (firstIndex < notes.length) {
                       if (notes[firstIndex].contains('-*-*-*--')) {
                         name1 = '';
-                      } else if (notes[firstIndex].length > 35) {
-                        name1 = notes[firstIndex].substring(0, 30) + '...';
-                      } else if (notes[firstIndex].length <= 35) {
+                      } else if (notes[firstIndex].length > 25) {
+                        name1 = notes[firstIndex].substring(0, 19) + '...';
+                      } else if (notes[firstIndex].length <= 25) {
                         name1 = notes[firstIndex];
                       }
                     }
@@ -297,9 +390,9 @@ class _NotesScreenState extends State<NotesScreen> {
                     if (secondIndex < notes.length) {
                       if (notes[secondIndex].contains('-*-*-*--')) {
                         name2 = '';
-                      } else if (notes[secondIndex].length > 35) {
-                        name2 = notes[secondIndex].substring(0, 30) + '...';
-                      } else if (notes[secondIndex].length <= 35) {
+                      } else if (notes[secondIndex].length > 25) {
+                        name2 = notes[secondIndex].substring(0, 19) + '...';
+                      } else if (notes[secondIndex].length <= 25) {
                         name2 = notes[secondIndex];
                       }
                     }
@@ -317,6 +410,19 @@ class _NotesScreenState extends State<NotesScreen> {
                             margin: EdgeInsets.all(8.0),
                             height: 100,
                             child: ListTile(
+                              trailing: IconButton(
+                                icon: Icon(
+                                    pins[firstIndex]
+                                        ? Icons.star_rounded
+                                        : Icons.star_outline_rounded,
+                                    color: pins[firstIndex]
+                                        ? const Color.fromARGB(255, 238, 143, 0)
+                                        : null),
+                                selectedIcon: Icon(Icons.star_rounded),
+                                onPressed: () {
+                                  pinNote(firstIndex);
+                                },
+                              ),
                               title: Text(name1),
                               onLongPress: () {
                                 setState(() {
@@ -347,6 +453,20 @@ class _NotesScreenState extends State<NotesScreen> {
                               margin: EdgeInsets.all(8.0),
                               height: 100,
                               child: ListTile(
+                                trailing: IconButton(
+                                  icon: Icon(
+                                      pins[secondIndex]
+                                          ? Icons.star_rounded
+                                          : Icons.star_outline_rounded,
+                                      color: pins[secondIndex]
+                                          ? const Color.fromARGB(
+                                              255, 238, 143, 0)
+                                          : null),
+                                  selectedIcon: Icon(Icons.star_rounded),
+                                  onPressed: () {
+                                    pinNote(secondIndex);
+                                  },
+                                ),
                                 title: Text(name2),
                                 onLongPress: () {
                                   setState(() {
