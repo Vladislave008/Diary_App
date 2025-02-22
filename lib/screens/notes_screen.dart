@@ -68,10 +68,8 @@ class _NotesScreenState extends State<NotesScreen> {
           .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
           .eq('pin', true);
 
-      setState(() {
-        notes_pinned =
-            List<String>.from(response1.map((note) => note['name'] as String));
-      });
+      notes_pinned =
+          List<String>.from(response1.map((note) => note['name'] as String));
 
       final response2 = await supabase
           .from('notes')
@@ -79,10 +77,8 @@ class _NotesScreenState extends State<NotesScreen> {
           .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
           .eq('pin', false);
 
-      setState(() {
-        notes_not_pinned =
-            List<String>.from(response2.map((note) => note['name'] as String));
-      });
+      notes_not_pinned =
+          List<String>.from(response2.map((note) => note['name'] as String));
     } catch (e) {
       print('Ошибка при загрузке списков: $e');
       if (context.mounted) {
@@ -92,10 +88,7 @@ class _NotesScreenState extends State<NotesScreen> {
       }
     }
 
-    setState(() {
-      notes =
-          notes_pinned.reversed.toList() + notes_not_pinned.reversed.toList();
-    });
+    notes = notes_pinned.reversed.toList() + notes_not_pinned.reversed.toList();
 
     try {
       final response1 = await supabase
@@ -104,10 +97,8 @@ class _NotesScreenState extends State<NotesScreen> {
           .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
           .eq('pin', true);
 
-      setState(() {
-        pins_pinned =
-            List<bool>.from(response1.map((note) => note['pin'] as bool));
-      });
+      pins_pinned =
+          List<bool>.from(response1.map((note) => note['pin'] as bool));
 
       final response2 = await supabase
           .from('notes')
@@ -115,10 +106,8 @@ class _NotesScreenState extends State<NotesScreen> {
           .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
           .eq('pin', false);
 
-      setState(() {
-        pins_not_pinned =
-            List<bool>.from(response2.map((note) => note['pin'] as bool));
-      });
+      pins_not_pinned =
+          List<bool>.from(response2.map((note) => note['pin'] as bool));
     } catch (e) {
       print('Ошибка при загрузке списков: $e');
       if (context.mounted) {
@@ -142,7 +131,6 @@ class _NotesScreenState extends State<NotesScreen> {
       ]);
 
       _nameController.clear();
-      await fetchNotes();
     } catch (e) {
       print(_nameController.text);
       print(FirebaseAuth.instance.currentUser!.uid);
@@ -153,6 +141,7 @@ class _NotesScreenState extends State<NotesScreen> {
         );
       }
     }
+    await fetchNotes();
   }
 
   Future<void> pinNote(int index) async {
