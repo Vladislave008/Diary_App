@@ -567,14 +567,32 @@ class _TabsPageState extends State<TabsPage> {
                           });
                         },
                         trailing: isSelectionMode
-                            ? Checkbox(
-                                activeColor:
-                                    const Color.fromARGB(255, 236, 37, 23),
-                                value: selectedIndices.contains(index),
-                                onChanged: (value) {
-                                  toggleSelection(index);
-                                },
-                              )
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                    IconButton(
+                                      icon: Icon(
+                                          pins[index]
+                                              ? Icons.star_rounded
+                                              : Icons.star_outline_rounded,
+                                          color: Colors.transparent),
+                                      selectedIcon: Icon(Icons.star_rounded),
+                                      onPressed: () {
+                                        toggleSelection(index);
+                                        ;
+                                      },
+                                    ),
+                                    Checkbox(
+                                      activeColor: const Color.fromARGB(
+                                          255, 236, 37, 23),
+                                      value: selectedIndices.contains(index),
+                                      onChanged: (value) {
+                                        toggleSelection(index);
+                                      },
+                                    )
+                                  ])
                             : Row(
                                 mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.end,

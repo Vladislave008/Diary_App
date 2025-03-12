@@ -1,285 +1,149 @@
+//import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:namer_app/screens/tab_content_page.dart';
+//import 'package:namer_app/firebase_service.dart';
+import 'package:namer_app/screens/settings_screen.dart';
+//import 'package:namer_app/screens/test_screen.dart';
+import 'package:namer_app/screens/tab_screen.dart';
+import 'package:namer_app/screens/notes_screen.dart';
 
-class TabsPage extends StatefulWidget {
+import 'package:table_calendar/table_calendar.dart';
+
+class NavigationExample extends StatefulWidget {
+  const NavigationExample({super.key});
+
   @override
-  State<TabsPage> createState() => _TabsPageState();
+  State<NavigationExample> createState() => _NavigationExampleState();
 }
 
-class _TabsPageState extends State<TabsPage> {
-  List<String> tabs = [];
-  bool isLoading = true;
-  List<DateTime> tabs_dates = [];
-  List<String> months = [
-    'января',
-    'февраля',
-    'марта',
-    'апреля',
-    'мая',
-    'июня',
-    'июля',
-    'августа',
-    'сентября',
-    'октября',
-    'ноября',
-    'декабря',
-  ];
+class _NavigationExampleState extends State<NavigationExample> {
+  int currentPageIndex = 0;
+  CalendarFormat _calendarFormat = CalendarFormat.week;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _newnameController = TextEditingController();
-  Set<int> selectedIndices = {};
-  bool isSelectionMode = false;
-
-  @override
-  void initState() {
-    super.initState();
-    fetchTabs();
-  }
-
-  final SupabaseClient supabase = Supabase.instance.client;
-
-  Future<void> fetchTabs() async {
-    if (FirebaseAuth.instance.currentUser == null) {
-      print('User not logged in');
-      return;
-    }
-    try {
-      final response = await supabase
-          .from('tabs')
-          .select('name')
-          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
-
-      //print('Данные из базы: $response');
-      setState(() {
-        tabs = List<String>.from(response.map((tab) => tab['name'] as String));
-      });
-    } catch (e) {
-      print('Ошибка при загрузке списков: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
-        );
-      }
-    }
-
-    try {
-      final response = await supabase
-          .from('tabs')
-          .select('created_at')
-          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
-
-      //print('Данные из базы: $response');
-      setState(() {
-        tabs_dates = List<DateTime>.from(
-          response.map((tab) {
-            final createdAt = tab['created_at'];
-            if (createdAt != null) {
-              try {
-                return DateTime.parse(createdAt as String);
-              } catch (e) {
-                print('Ошибка при преобразовании даты: $e');
-                return DateTime
-                    .now(); // Возвращаем текущую дату как значение по умолчанию
-              }
-            } else {
-              return DateTime
-                  .now(); // Возвращаем текущую дату как значение по умолчанию
-            }
-          }),
-        );
-      });
-    } catch (e) {
-      print('Ошибка при загрузке списков: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> addTab() async {
-    if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Введите название списка')),
-      );
-      return;
-    }
-    if (_nameController.text[0] == ' ') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Название списка не может быть пустым или начинаться с пробела')),
-      );
-      return;
-    }
-    if (tabs.contains(_nameController.text)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Такая вкладка уже существует')),
-      );
-      return;
-    }
-
-    try {
-      await supabase.from('tabs').insert([
-        {
-          'name': _nameController.text,
-          'user_id': FirebaseAuth.instance.currentUser!.uid
-        }
-      ]);
-      _nameController.clear();
-      await fetchTabs();
-    } catch (e) {
-      print('Ошибка при добавлении списка: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка при добавлении списка: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> updateTab(String tabName, String newTitle) async {
-    try {
-      final response = await supabase
-          .from('tabs')
-          .update({'name': newTitle})
-          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
-          .eq('name', tabName);
-
-      if (response.error != null) {
-        throw response.error!;
-      }
-
-      await fetchTabs();
-      print('Tabupdated successfully');
-    } catch (e) {
-      print('Error updating tab: $e');
-    }
-  }
-
-  Future<void> deleteTab(String tabName) async {
-    print('delete tab $tabName');
-    try {
-      await supabase
-          .from('tabs')
-          .delete()
-          .eq('name', tabName)
-          .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
-
-      await supabase
-          .from('tabs_items')
-          .delete()
-          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
-          .eq('parent_tab', tabName);
-
-      await fetchTabs();
-    } catch (e) {
-      print('Ошибка при удалении таба: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при удалении таба: $e')),
-      );
-    }
-  }
-
-  Future<void> deleteSelectedTabs() async {
-    try {
-      for (int index in selectedIndices) {
-        await supabase
-            .from('tabs')
-            .delete()
-            .eq('name', tabs[index])
-            .eq('user_id', FirebaseAuth.instance.currentUser!.uid);
-
-        await supabase
-            .from('tabs_items')
-            .delete()
-            .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
-            .eq('parent_tab', tabs[index]);
-      }
-      await fetchTabs();
-      setState(() {
-        selectedIndices.clear();
-        isSelectionMode = false;
-      });
-    } catch (e) {
-      print('Ошибка при удалении табов: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при удалении табов: $e')),
-      );
-    }
-  }
-
-  void toggleSelection(int index) {
-    setState(() {
-      if (selectedIndices.contains(index)) {
-        selectedIndices.remove(index);
-      } else {
-        selectedIndices.add(index);
-      }
-      if (selectedIndices.isEmpty) {
-        isSelectionMode = false;
-      }
-    });
+  void _closeDrawer() {
+    Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(110, 168, 195, 212),
-        title: isSelectionMode
-            ? Text('Выбрано: ${selectedIndices.length}')
-            : Text('Мои Списки'),
-        /*actions: isLoading
-            ? [
-                CircularProgressIndicator(
-                  color: const Color.fromARGB(255, 255, 115, 0),
-                )
-              ]
-            : [],*/
-      ),
-      floatingActionButton: isSelectionMode
-          ? FloatingActionButton(
-              backgroundColor: const Color.fromARGB(255, 245, 46, 46),
-              foregroundColor: Colors.white,
-              child: Icon(Icons.delete_outline_outlined),
+          title: const Text('Diary App'),
+          backgroundColor: const Color.fromARGB(110, 168, 195, 212),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Settings',
               onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: Text('Удалить выбранные списки'),
-                      content: Text(
-                          'Вы уверены, что хотите удалить все выбранные списки?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(); // Закрыть диалог
-                          },
-                          child: Text('Отмена'),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            Navigator.of(context).pop(); // Закрыть диалог
-                            await deleteSelectedTabs(); // Удалить выбранные списки
-                          },
-                          child: Text(
-                            'Удалить',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
+                if (context.mounted) {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => SettingsScreen(),
+                  ));
+                }
               },
             )
-          : null,
-      body: Container(
-          padding: const EdgeInsets.all(10.0),
+          ]),
+      drawer: Drawer(
+        child: Center(
+          child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color.fromARGB(255, 80, 185, 247),
+                    const Color.fromARGB(255, 219, 81, 247)
+                  ],
+                ),
+              ),
+              //padding: EdgeInsets.all(15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    //padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Color.fromARGB(110, 168, 195, 212)),
+                    child: Image.asset(
+                      'assets/images/bar_image.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                if (context.mounted) {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => TabsPage(),
+                                  ));
+                                }
+                              },
+                              icon: Icon(Icons.format_list_numbered),
+                              label: const Text('Мои Списки'),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                if (context.mounted) {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => NotesScreen(),
+                                  ));
+                                }
+                              },
+                              icon: Icon(Icons.event_note),
+                              label: const Text('Заметки'),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: _closeDrawer,
+                              icon: Icon(Icons.close),
+                              label: const Text('Закрыть меню'),
+                            )
+                          ])),
+                ],
+              )),
+        ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        backgroundColor: const Color.fromARGB(110, 168, 195, 212),
+        onDestinationSelected: (int index) {
+          setState(() {
+            currentPageIndex = index;
+          });
+        },
+        indicatorColor: const Color.fromARGB(255, 248, 149, 83),
+        selectedIndex: currentPageIndex,
+        destinations: const <Widget>[
+          NavigationDestination(
+            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Badge(child: Icon(Icons.notifications_sharp)),
+            label: 'Notifications',
+          ),
+          NavigationDestination(
+            icon: Badge(
+              label: Text('2'),
+              child: Icon(Icons.messenger_sharp),
+            ),
+            label: 'Messages',
+          ),
+        ],
+      ),
+      body: <Widget>[
+        /// Home page
+        Container(
+          //shadowColor: Colors.transparent,
+          //margin: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -290,204 +154,82 @@ class _TabsPageState extends State<TabsPage> {
               ],
             ),
           ),
-          child: Column(
-            children: [
-              //SizedBox(height: 10),
-
-              Container(
-                  padding: EdgeInsets.all(10.0),
-                  decoration: BoxDecoration(
-                    color: Color.fromARGB(160, 255, 255, 255),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Название Списка',
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          Icons.add_circle_outline,
-                        ),
-                        color: Color.fromARGB(255, 212, 94, 15),
-                        onPressed: _nameController.text.isEmpty ||
-                                _nameController.text[0] == ' '
-                            ? null
-                            : addTab,
-                      ),
-                    ),
-                    onChanged: (text) {
-                      setState(() {});
-                    },
-                    maxLength: 40,
-                  )),
-              SizedBox(height: 10),
-              /*ElevatedButton(
-            onPressed:
-                _nameController.text.isEmpty || _nameController.text[0] == ' '
-                    ? null
-                    : addTab,
-            child: Text('Добавить Список'),
-          ),*/
-              Expanded(
-                child: ListView.builder(
-                  itemCount: tabs.length,
-                  itemBuilder: (context, index) {
-                    if (tabs_dates.isEmpty || index >= tabs_dates.length) {
-                      isLoading = false;
-
-                      return SizedBox
-                          .shrink(); // Возвращаем пустой виджет, если данных нет
-                    }
-                    String monthIndexStr =
-                        tabs_dates[index].toLocal().toString().substring(5, 7);
-                    String date =
-                        tabs_dates[index].toLocal().toString().substring(8, 10);
-                    if (date[0] == '0') {
-                      date = date.substring(1, 2);
-                    }
-                    String year =
-                        tabs_dates[index].toLocal().toString().substring(0, 4);
-                    int monthIndex = int.parse(monthIndexStr) - 1;
-                    String monthName = months[monthIndex];
-                    return Container(
-                      decoration: BoxDecoration(
-                        color:
-                            selectedIndices.contains(index) && isSelectionMode
-                                ? Color.fromARGB(255, 245, 163, 163)
-                                : Color.fromARGB(160, 255, 255, 255),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      padding: const EdgeInsets.all(20.0),
-                      margin: const EdgeInsets.only(bottom: 10.0),
-                      child: ListTile(
-                        title: Text(
-                          tabs[index],
-                          //style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text('Создано $date $monthName $year'),
-                        onTap: () {
-                          if (isSelectionMode) {
-                            toggleSelection(index);
-                          } else {
-                            if (context.mounted) {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) =>
-                                    TabContentPage(tabName: tabs[index]),
-                              ));
-                            }
-                          }
-                        },
-                        onLongPress: () {
-                          setState(() {
-                            isSelectionMode = true;
-                            toggleSelection(index);
-                          });
-                        },
-                        trailing: isSelectionMode
-                            ? Checkbox(
-                                activeColor:
-                                    const Color.fromARGB(255, 236, 37, 23),
-                                value: selectedIndices.contains(index),
-                                onChanged: (value) {
-                                  toggleSelection(index);
-                                },
-                              )
-                            : Row(children: [
-                                IconButton(
-                                  icon: Icon(Icons.update),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: Text('Обновить Список'),
-                                          content: TextField(
-                                            controller: _newnameController,
-                                            decoration: InputDecoration(
-                                              labelText:
-                                                  'Новое название списка',
-                                            ),
-                                            onChanged: (text) {
-                                              setState(() {});
-                                            },
-                                            maxLength: 40,
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                              child: Text('Отмена'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () async {
-                                                Navigator.of(context).pop();
-                                                await updateTab(tabs[index],
-                                                    _newnameController.text);
-                                              },
-                                              child: Text(
-                                                'Готово',
-                                                style: TextStyle(
-                                                    color: Colors.red),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.delete_outline_outlined),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: Text('Удалить Список'),
-                                          content: Text(
-                                              'Вы уверены, что хотите удалить список ${tabs[index]}?'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.of(context)
-                                                    .pop(); // Закрыть диалог
-                                              },
-                                              child: Text('Отмена'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () async {
-                                                Navigator.of(context)
-                                                    .pop(); // Закрыть диалог
-                                                await deleteTab(
-                                                    tabs[index]); // Удалить таб
-                                              },
-                                              child: Text(
-                                                'Удалить',
-                                                style: TextStyle(
-                                                    color: Colors.red),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  },
-                                )
-                              ]),
-                      ),
-                    );
-                  },
-                ),
+          child: SizedBox.expand(
+            child: Center(
+              child: TableCalendar(
+                firstDay: DateTime.utc(2020, 1, 1),
+                lastDay: DateTime.utc(2030, 12, 31),
+                focusedDay: _focusedDay,
+                calendarFormat: _calendarFormat,
+                selectedDayPredicate: (day) {
+                  return isSameDay(_selectedDay, day);
+                },
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                  });
+                },
+                onFormatChanged: (format) {
+                  setState(() {
+                    _calendarFormat = format;
+                  });
+                },
+                onPageChanged: (focusedDay) {
+                  _focusedDay = focusedDay;
+                },
               ),
-            ],
-          )),
-    );
-  }
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color.fromARGB(255, 80, 185, 247),
+                const Color.fromARGB(255, 219, 81, 247)
+              ],
+            ),
+          ),
+          //shadowColor: Colors.transparent,
+          //margin: const EdgeInsets.all(8.0),
+          child: SizedBox.expand(
+            child: Center(
+              child: Text(
+                'Second',
+                style: theme.textTheme.titleLarge,
+              ),
+            ),
+          ),
+        ),
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
+        /// Notifications page
+
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color.fromARGB(255, 80, 185, 247),
+                const Color.fromARGB(255, 219, 81, 247)
+              ],
+            ),
+          ),
+          //shadowColor: Colors.transparent,
+          //margin: const EdgeInsets.all(8.0),
+          child: SizedBox.expand(
+            child: Center(
+              child: Text(
+                'Third',
+                style: theme.textTheme.titleLarge,
+              ),
+            ),
+          ),
+        ),
+      ][currentPageIndex],
+    );
   }
 }

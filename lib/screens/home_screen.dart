@@ -5,6 +5,8 @@ import 'package:namer_app/screens/settings_screen.dart';
 //import 'package:namer_app/screens/test_screen.dart';
 import 'package:namer_app/screens/tab_screen.dart';
 import 'package:namer_app/screens/notes_screen.dart';
+import 'package:namer_app/screens/plans_screen.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class NavigationExample extends StatefulWidget {
   const NavigationExample({super.key});
@@ -15,6 +17,10 @@ class NavigationExample extends StatefulWidget {
 
 class _NavigationExampleState extends State<NavigationExample> {
   int currentPageIndex = 0;
+  CalendarFormat _calendarFormat = CalendarFormat.week;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
   void _closeDrawer() {
     Navigator.of(context).pop();
   }
@@ -138,6 +144,7 @@ class _NavigationExampleState extends State<NavigationExample> {
         Container(
           //shadowColor: Colors.transparent,
           //margin: const EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -148,14 +155,50 @@ class _NavigationExampleState extends State<NavigationExample> {
               ],
             ),
           ),
-          child: SizedBox.expand(
-            child: Center(
-              child: Text(
-                'First',
-                style: theme.textTheme.titleLarge,
+          child: Column(children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Color.fromARGB(160, 255, 255, 255),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: TableCalendar(
+                  firstDay: DateTime.utc(2020, 1, 1),
+                  lastDay: DateTime.utc(2030, 12, 31),
+                  focusedDay: _focusedDay,
+                  calendarFormat: _calendarFormat,
+                  availableCalendarFormats: const {
+                    CalendarFormat.month: 'Week',
+                    CalendarFormat.twoWeeks: 'Month',
+                    CalendarFormat.week: '2 weeks'
+                  },
+                  selectedDayPredicate: (day) {
+                    return isSameDay(_selectedDay, day);
+                  },
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                    if (context.mounted) {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => PlansPage(Date: selectedDay),
+                      ));
+                    }
+                  },
+                  onFormatChanged: (format) {
+                    setState(() {
+                      _calendarFormat = format;
+                    });
+                  },
+                  onPageChanged: (focusedDay) {
+                    _focusedDay = focusedDay;
+                  },
+                ),
               ),
             ),
-          ),
+            Expanded(child: Text('')),
+          ]),
         ),
         Container(
           decoration: BoxDecoration(

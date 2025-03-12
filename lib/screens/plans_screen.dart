@@ -1,0 +1,541 @@
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
+import 'package:namer_app/screens/home_screen.dart';
+
+class PlansPage extends StatefulWidget {
+  final DateTime Date;
+
+  PlansPage({required this.Date});
+
+  @override
+  State<PlansPage> createState() => _PlansPageState();
+}
+
+class _PlansPageState extends State<PlansPage> {
+  List<String> plans = [];
+
+  bool isLoading = false;
+
+  final TextEditingController _newnameController = TextEditingController();
+  DateTime _time = DateTime.now();
+
+  List<String> months = [
+    'января',
+    'февраля',
+    'марта',
+    'апреля',
+    'мая',
+    'июня',
+    'июля',
+    'августа',
+    'сентября',
+    'октября',
+    'ноября',
+    'декабря',
+  ];
+
+  String title = '';
+
+  Set<int> selectedIndices = {};
+  bool isSelectionMode = false;
+
+  @override
+  void initState() {
+    String monthIndexStr = widget.Date.toLocal().toString().substring(5, 7);
+    String date = widget.Date.toLocal().toString().substring(8, 10);
+    if (date[0] == '0') {
+      date = date.substring(1, 2);
+    }
+    String year = widget.Date.toLocal().toString().substring(0, 4);
+    int monthIndex = int.parse(monthIndexStr) - 1;
+    String monthName = months[monthIndex];
+
+    title = '$date $monthName $year';
+    super.initState();
+    fetchPlans();
+    print(widget.Date.toLocal().toString().substring(0, 11));
+  }
+
+  final SupabaseClient supabase = Supabase.instance.client;
+
+  Future<void> fetchPlans() async {
+    setState(() {
+      isLoading = true;
+    });
+    if (FirebaseAuth.instance.currentUser == null) {
+      print('User not logged in');
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final response = await supabase
+          .from('plans')
+          .select('name')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('date', widget.Date.toLocal().toString().substring(0, 11));
+
+      setState(() {
+        plans = List<String>.from(response.map((tab) => tab['name'] as String));
+      });
+    } catch (e) {
+      print('Ошибка при загрузке списков: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
+        );
+      }
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+    print(plans);
+  }
+
+  Future<void> addPlan() async {
+    if (plans.contains('')) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Уже существует пустой план')),
+        );
+      }
+      print('Уже существует пустой план');
+      return;
+    }
+    try {
+      await supabase.from('plans').insert([
+        {
+          'name': '',
+          'user_id': FirebaseAuth.instance.currentUser!.uid,
+          'date': widget.Date.toLocal().toString().substring(0, 11)
+        }
+      ]);
+
+      await fetchPlans();
+    } catch (e) {
+      print('Ошибка при добавлении списка: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при добавлении списка: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> updatePlan(String tabName) async {
+    if (_newnameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Введите название списка')),
+      );
+      return;
+    }
+    if (_newnameController.text[0] == ' ') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Название списка не может быть пустым или начинаться с пробела')),
+      );
+      return;
+    }
+    if (plans.contains(_newnameController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Такая вкладка уже существует')),
+      );
+      return;
+    }
+
+    try {
+      await supabase
+          .from('plans')
+          .update({'name': _newnameController.text})
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('name', tabName)
+          .eq('date', widget.Date.toLocal().toString().substring(0, 11));
+
+      _newnameController.clear();
+      await fetchPlans();
+      print('Tabupdated successfully');
+    } catch (e) {
+      print('Error updating tab: $e');
+    }
+  }
+
+  Future<void> deletePlan(String tabName) async {
+    print('delete tab $tabName');
+    try {
+      await supabase
+          .from('plans')
+          .delete()
+          .eq('name', tabName)
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('date', widget.Date.toLocal().toString().substring(0, 11));
+
+      await fetchPlans();
+    } catch (e) {
+      print('Ошибка при удалении таба: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при удалении таба: $e')),
+      );
+    }
+  }
+
+  Future<void> deleteSelectedPlans() async {
+    setState(() {
+      isSelectionMode = false;
+    });
+    try {
+      for (int index in selectedIndices) {
+        await supabase
+            .from('plans')
+            .delete()
+            .eq('name', plans[index])
+            .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+            .eq('date', widget.Date.toLocal().toString().substring(0, 11));
+      }
+
+      setState(() {
+        selectedIndices.clear();
+        isSelectionMode = false;
+      });
+      await fetchPlans();
+    } catch (e) {
+      print('Ошибка при удалении табов: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при удалении табов: $e')),
+      );
+    }
+  }
+
+  void toggleSelection(int index) {
+    setState(() {
+      if (selectedIndices.contains(index)) {
+        selectedIndices.remove(index);
+      } else {
+        selectedIndices.add(index);
+      }
+      if (selectedIndices.isEmpty) {
+        isSelectionMode = false;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(110, 168, 195, 212),
+        title: isSelectionMode
+            ? Text('Выбрано: ${selectedIndices.length}')
+            : Text(title),
+        actions: isLoading
+            ? [
+                CircularProgressIndicator(
+                  strokeWidth: 3,
+                  //color: const Color.fromARGB(255, 255, 115, 0),
+                ),
+                IconButton(
+                    onPressed: () {
+                      if (context.mounted) {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => NavigationExample(),
+                        ));
+                      }
+                    },
+                    icon: Icon(Icons.home_rounded)),
+              ]
+            : [
+                IconButton(
+                    onPressed: () {
+                      if (context.mounted) {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => NavigationExample(),
+                        ));
+                      }
+                    },
+                    icon: Icon(Icons.home_rounded))
+              ],
+      ),
+      floatingActionButton: isSelectionMode
+          ? FloatingActionButton(
+              backgroundColor: const Color.fromARGB(255, 245, 46, 46),
+              foregroundColor: Colors.white,
+              child: Icon(Icons.delete_outline_outlined),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('Удалить выбранные планы'),
+                      content: Text(
+                          'Вы уверены, что хотите удалить все выбранные планы?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Закрыть диалог
+                          },
+                          child: Text('Отмена'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop(); // Закрыть диалог
+                            await deleteSelectedPlans(); // Удалить выбранные списки
+                          },
+                          child: Text(
+                            'Удалить',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            )
+          : null,
+      body: Container(
+          padding: const EdgeInsets.all(10.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color.fromARGB(255, 80, 185, 247),
+                const Color.fromARGB(255, 219, 81, 247)
+              ],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              //SizedBox(height: 10),
+
+              Container(
+                padding: EdgeInsets.all(10.0),
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(160, 255, 255, 255),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.add_circle_outline),
+                  //color: Color.fromARGB(255, 212, 94, 15),
+                  onPressed: addPlan,
+                ),
+              ),
+              SizedBox(height: 10),
+              /*ElevatedButton(
+            onPressed:
+                _nameController.text.isEmpty || _nameController.text[0] == ' '
+                    ? null
+                    : addPlan,
+            child: Text('Добавить план'),
+          ),*/
+              Expanded(
+                child: ListView.builder(
+                  itemCount: plans.length,
+                  itemBuilder: (context, index) {
+                    if (plans.isEmpty || index >= plans.length) {
+                      isLoading = false;
+
+                      return SizedBox
+                          .shrink(); // Возвращаем пустой виджет, если данных нет
+                    }
+                    return Container(
+                      decoration: BoxDecoration(
+                        color:
+                            selectedIndices.contains(index) && isSelectionMode
+                                ? Color.fromARGB(255, 245, 163, 163)
+                                : Color.fromARGB(160, 255, 255, 255),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.all(20.0),
+                      margin: const EdgeInsets.only(bottom: 10.0),
+                      child: ListTile(
+                        title: Text(
+                          plans[index],
+                          //style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        onTap: () {
+                          if (isSelectionMode) {
+                            toggleSelection(index);
+                          } else {
+                            setState(() {
+                              _newnameController.text = plans[index];
+                            });
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text('Обновить план'),
+                                  content: SingleChildScrollView(
+                                      child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                        TextField(
+                                          controller: _newnameController,
+                                          decoration: InputDecoration(
+                                            labelText: 'Новое название плана',
+                                          ),
+                                          onChanged: (text) {
+                                            setState(() {});
+                                          },
+                                          maxLength: 40,
+                                        ),
+                                        TimePickerSpinner(
+                                          spacing: 0,
+                                          itemHeight: 40,
+                                          normalTextStyle: const TextStyle(
+                                            fontSize: 22,
+                                          ),
+                                          highlightedTextStyle: const TextStyle(
+                                            fontSize: 22,
+                                            color: Color.fromARGB(
+                                                255, 255, 102, 0),
+                                          ),
+                                          time: _time, // Передаем DateTime
+                                          onTimeChange: (time) {
+                                            setState(() {
+                                              _time =
+                                                  time; // Обновляем DateTime
+                                            });
+                                          },
+                                        ),
+                                      ])),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                        setState(() {
+                                          _newnameController.clear();
+                                        });
+                                      },
+                                      child: Text(
+                                        'Отмена',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        Navigator.of(context).pop();
+                                        await updatePlan(plans[index]);
+                                        setState(() {
+                                          _newnameController.clear();
+                                        });
+                                      },
+                                      child: Text(
+                                        'Готово',
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
+                          ;
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            isSelectionMode = true;
+                            toggleSelection(index);
+                          });
+                        },
+                        trailing: isSelectionMode
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                    Checkbox(
+                                      activeColor: const Color.fromARGB(
+                                          255, 236, 37, 23),
+                                      value: selectedIndices.contains(index),
+                                      onChanged: (value) {
+                                        toggleSelection(index);
+                                      },
+                                    )
+                                  ])
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                    IconButton(
+                                      icon: Icon(Icons.edit_outlined),
+                                      onPressed: () {
+                                        setState(() {
+                                          _newnameController.text =
+                                              plans[index];
+                                        });
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: Text('Обновить план'),
+                                              content: TextField(
+                                                controller: _newnameController,
+                                                decoration: InputDecoration(
+                                                  labelText:
+                                                      'Новое название плана',
+                                                ),
+                                                onChanged: (text) {
+                                                  setState(() {});
+                                                },
+                                                maxLength: 40,
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                    setState(() {
+                                                      _newnameController
+                                                          .clear();
+                                                    });
+                                                  },
+                                                  child: Text(
+                                                    'Отмена',
+                                                    style: TextStyle(
+                                                        color: Colors.red),
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () async {
+                                                    Navigator.of(context).pop();
+                                                    await updatePlan(
+                                                        plans[index]);
+                                                    setState(() {
+                                                      _newnameController
+                                                          .clear();
+                                                    });
+                                                  },
+                                                  child: Text(
+                                                    'Готово',
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ]),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          )),
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+}
