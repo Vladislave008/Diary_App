@@ -79,7 +79,7 @@ class FirebaseService {
     final snackBar = SnackBar(
         content: Text(message),
         duration: Duration(seconds: 5),
-        backgroundColor: const Color.fromARGB(255, 255, 102, 0));
+        backgroundColor: Colors.red[900]);
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 

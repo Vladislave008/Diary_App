@@ -486,7 +486,7 @@ class _TabsPageState extends State<TabsPage> {
                   padding: EdgeInsets.all(10.0),
                   decoration: BoxDecoration(
                     color: Color.fromARGB(160, 255, 255, 255),
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: TextField(
                     controller: _nameController,

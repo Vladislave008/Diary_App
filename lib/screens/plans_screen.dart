@@ -15,6 +15,7 @@ class PlansPage extends StatefulWidget {
 
 class _PlansPageState extends State<PlansPage> {
   List<String> plans = [];
+  List<String> times = [];
 
   bool isLoading = false;
 
@@ -82,6 +83,17 @@ class _PlansPageState extends State<PlansPage> {
       setState(() {
         plans = List<String>.from(response.map((tab) => tab['name'] as String));
       });
+
+      final response2 = await supabase
+          .from('plans')
+          .select('time')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('date', widget.Date.toLocal().toString().substring(0, 11));
+
+      setState(() {
+        times =
+            List<String>.from(response2.map((tab) => tab['time'] as String));
+      });
     } catch (e) {
       print('Ошибка при загрузке списков: $e');
       if (context.mounted) {
@@ -95,6 +107,7 @@ class _PlansPageState extends State<PlansPage> {
       isLoading = false;
     });
     print(plans);
+    print(times);
   }
 
   Future<void> addPlan() async {
@@ -142,7 +155,8 @@ class _PlansPageState extends State<PlansPage> {
       );
       return;
     }
-    if (plans.contains(_newnameController.text)) {
+    if (plans.contains(_newnameController.text) &&
+        _newnameController.text != tabName) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Такая вкладка уже существует')),
       );
@@ -152,7 +166,10 @@ class _PlansPageState extends State<PlansPage> {
     try {
       await supabase
           .from('plans')
-          .update({'name': _newnameController.text})
+          .update({
+            'name': _newnameController.text,
+            'time': _time.hour.toString() + ':' + _time.minute.toString()
+          })
           .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
           .eq('name', tabName)
           .eq('date', widget.Date.toLocal().toString().substring(0, 11));
@@ -338,7 +355,10 @@ class _PlansPageState extends State<PlansPage> {
                 child: ListView.builder(
                   itemCount: plans.length,
                   itemBuilder: (context, index) {
-                    if (plans.isEmpty || index >= plans.length) {
+                    if (plans.isEmpty ||
+                        index >= plans.length ||
+                        times.isEmpty ||
+                        index >= times.length) {
                       isLoading = false;
 
                       return SizedBox
@@ -355,176 +375,134 @@ class _PlansPageState extends State<PlansPage> {
                       padding: const EdgeInsets.all(20.0),
                       margin: const EdgeInsets.only(bottom: 10.0),
                       child: ListTile(
-                        title: Text(
-                          plans[index],
-                          //style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        onTap: () {
-                          if (isSelectionMode) {
-                            toggleSelection(index);
-                          } else {
-                            setState(() {
-                              _newnameController.text = plans[index];
-                            });
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text('Обновить план'),
-                                  content: SingleChildScrollView(
+                          title: Text(
+                            plans[index],
+                            //style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle:
+                              times[index] == ' ' ? null : Text(times[index]),
+                          onTap: () {
+                            if (isSelectionMode) {
+                              toggleSelection(index);
+                            } else {
+                              setState(() {
+                                _newnameController.text = plans[index];
+                              });
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text('Обновить план'),
+                                    content: SingleChildScrollView(
                                       child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                        TextField(
-                                          controller: _newnameController,
-                                          decoration: InputDecoration(
-                                            labelText: 'Новое название плана',
+                                        crossAxisAlignment: CrossAxisAlignment
+                                            .start, // Выравнивание по левому краю
+                                        mainAxisSize: MainAxisSize
+                                            .min, // Минимальная высота Column
+                                        children: [
+                                          TextField(
+                                            controller: _newnameController,
+                                            decoration: InputDecoration(
+                                              labelText: 'Новое название плана',
+                                            ),
+                                            onChanged: (text) {
+                                              setState(() {});
+                                            },
+                                            maxLength: 40,
                                           ),
-                                          onChanged: (text) {
-                                            setState(() {});
-                                          },
-                                          maxLength: 40,
-                                        ),
-                                        TimePickerSpinner(
-                                          spacing: 0,
-                                          itemHeight: 40,
-                                          normalTextStyle: const TextStyle(
-                                            fontSize: 22,
-                                          ),
-                                          highlightedTextStyle: const TextStyle(
-                                            fontSize: 22,
-                                            color: Color.fromARGB(
-                                                255, 255, 102, 0),
-                                          ),
-                                          time: _time, // Передаем DateTime
-                                          onTimeChange: (time) {
-                                            setState(() {
-                                              _time =
-                                                  time; // Обновляем DateTime
-                                            });
-                                          },
-                                        ),
-                                      ])),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                        setState(() {
-                                          _newnameController.clear();
-                                        });
-                                      },
-                                      child: Text(
-                                        'Отмена',
-                                        style: TextStyle(color: Colors.red),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () async {
-                                        Navigator.of(context).pop();
-                                        await updatePlan(plans[index]);
-                                        setState(() {
-                                          _newnameController.clear();
-                                        });
-                                      },
-                                      child: Text(
-                                        'Готово',
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          }
-                          ;
-                        },
-                        onLongPress: () {
-                          setState(() {
-                            isSelectionMode = true;
-                            toggleSelection(index);
-                          });
-                        },
-                        trailing: isSelectionMode
-                            ? Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                    Checkbox(
-                                      activeColor: const Color.fromARGB(
-                                          255, 236, 37, 23),
-                                      value: selectedIndices.contains(index),
-                                      onChanged: (value) {
-                                        toggleSelection(index);
-                                      },
-                                    )
-                                  ])
-                            : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                    IconButton(
-                                      icon: Icon(Icons.edit_outlined),
-                                      onPressed: () {
-                                        setState(() {
-                                          _newnameController.text =
-                                              plans[index];
-                                        });
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: Text('Обновить план'),
-                                              content: TextField(
-                                                controller: _newnameController,
-                                                decoration: InputDecoration(
-                                                  labelText:
-                                                      'Новое название плана',
+                                          // Обернули TimePickerSpinner в Center
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              TimePickerSpinner(
+                                                spacing: 0,
+                                                itemHeight: 40,
+                                                normalTextStyle:
+                                                    const TextStyle(
+                                                  fontSize: 25,
+                                                  color: Colors.grey,
                                                 ),
-                                                onChanged: (text) {
-                                                  setState(() {});
+                                                highlightedTextStyle:
+                                                    const TextStyle(
+                                                  fontSize: 25,
+                                                  color: Colors.black,
+                                                ),
+                                                time:
+                                                    _time, // Передаем DateTime
+                                                onTimeChange: (time) {
+                                                  setState(() {
+                                                    _time =
+                                                        time; // Обновляем DateTime
+                                                    print(
+                                                        _time.hour.toString() +
+                                                            _time.minute
+                                                                .toString());
+                                                  });
                                                 },
-                                                maxLength: 40,
                                               ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                    setState(() {
-                                                      _newnameController
-                                                          .clear();
-                                                    });
-                                                  },
-                                                  child: Text(
-                                                    'Отмена',
-                                                    style: TextStyle(
-                                                        color: Colors.red),
-                                                  ),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () async {
-                                                    Navigator.of(context).pop();
-                                                    await updatePlan(
-                                                        plans[index]);
-                                                    setState(() {
-                                                      _newnameController
-                                                          .clear();
-                                                    });
-                                                  },
-                                                  child: Text(
-                                                    'Готово',
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      },
+                                              TextButton(
+                                                  onPressed: null,
+                                                  child: Text('Без времени'))
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ]),
-                      ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                          setState(() {
+                                            _newnameController.clear();
+                                          });
+                                        },
+                                        child: Text(
+                                          'Отмена',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () async {
+                                          Navigator.of(context).pop();
+                                          await updatePlan(plans[index]);
+                                          setState(() {
+                                            _newnameController.clear();
+                                          });
+                                        },
+                                        child: Text(
+                                          'Готово',
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            }
+                            ;
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              isSelectionMode = true;
+                              toggleSelection(index);
+                            });
+                          },
+                          trailing: isSelectionMode
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                      Checkbox(
+                                        activeColor: const Color.fromARGB(
+                                            255, 236, 37, 23),
+                                        value: selectedIndices.contains(index),
+                                        onChanged: (value) {
+                                          toggleSelection(index);
+                                        },
+                                      )
+                                    ])
+                              : null),
                     );
                   },
                 ),
