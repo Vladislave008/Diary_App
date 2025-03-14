@@ -17,7 +17,9 @@ class _PlansPageState extends State<PlansPage> {
   List<String> plans = [];
   List<String> times = [];
 
+  bool switchvalue = true;
   bool isLoading = false;
+  bool noTime = false;
 
   final TextEditingController _newnameController = TextEditingController();
   DateTime _time = DateTime.now();
@@ -164,15 +166,22 @@ class _PlansPageState extends State<PlansPage> {
     }
 
     try {
-      await supabase
-          .from('plans')
-          .update({
-            'name': _newnameController.text,
-            'time': _time.hour.toString() + ':' + _time.minute.toString()
-          })
-          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
-          .eq('name', tabName)
-          .eq('date', widget.Date.toLocal().toString().substring(0, 11));
+      if (noTime) {
+        await supabase
+            .from('plans')
+            .update({'name': _newnameController.text, 'time': ' '})
+            .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+            .eq('name', tabName)
+            .eq('date', widget.Date.toLocal().toString().substring(0, 11));
+      } else if (noTime == false) {
+        await supabase
+            .from('plans')
+            .update(
+                {'name': _newnameController.text, 'time': formatTime(_time)})
+            .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+            .eq('name', tabName)
+            .eq('date', widget.Date.toLocal().toString().substring(0, 11));
+      }
 
       _newnameController.clear();
       await fetchPlans();
@@ -239,6 +248,12 @@ class _PlansPageState extends State<PlansPage> {
         isSelectionMode = false;
       }
     });
+  }
+
+  String formatTime(DateTime time) {
+    String hours = time.hour.toString().padLeft(2, '0');
+    String minutes = time.minute.toString().padLeft(2, '0');
+    return "$hours:$minutes";
   }
 
   @override
@@ -364,6 +379,7 @@ class _PlansPageState extends State<PlansPage> {
                       return SizedBox
                           .shrink(); // Возвращаем пустой виджет, если данных нет
                     }
+
                     return Container(
                       decoration: BoxDecoration(
                         color:
@@ -382,6 +398,20 @@ class _PlansPageState extends State<PlansPage> {
                           subtitle:
                               times[index] == ' ' ? null : Text(times[index]),
                           onTap: () {
+                            if (times[index] == ' ') {
+                              setState(() {
+                                switchvalue = false;
+                                noTime = true;
+                                _time = DateTime.now();
+                              });
+                            } else if (times[index] != ' ') {
+                              setState(() {
+                                String t = times[index];
+                                switchvalue = true;
+                                noTime = false;
+                                _time = DateTime.parse("2023-10-05T$t:00.123Z");
+                              });
+                            }
                             if (isSelectionMode) {
                               toggleSelection(index);
                             } else {
@@ -391,90 +421,98 @@ class _PlansPageState extends State<PlansPage> {
                               showDialog(
                                 context: context,
                                 builder: (context) {
-                                  return AlertDialog(
-                                    title: Text('Обновить план'),
-                                    content: SingleChildScrollView(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment
-                                            .start, // Выравнивание по левому краю
-                                        mainAxisSize: MainAxisSize
-                                            .min, // Минимальная высота Column
-                                        children: [
-                                          TextField(
-                                            controller: _newnameController,
-                                            decoration: InputDecoration(
-                                              labelText: 'Новое название плана',
-                                            ),
-                                            onChanged: (text) {
-                                              setState(() {});
-                                            },
-                                            maxLength: 40,
-                                          ),
-                                          // Обернули TimePickerSpinner в Center
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
+                                  return StatefulBuilder(
+                                    builder: (BuildContext context,
+                                        StateSetter setState) {
+                                      return AlertDialog(
+                                        title: Text('Обновить план'),
+                                        content: SingleChildScrollView(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              TimePickerSpinner(
-                                                spacing: 0,
-                                                itemHeight: 40,
-                                                normalTextStyle:
-                                                    const TextStyle(
-                                                  fontSize: 25,
-                                                  color: Colors.grey,
+                                              TextField(
+                                                controller: _newnameController,
+                                                decoration: InputDecoration(
+                                                  labelText:
+                                                      'Новое название плана',
                                                 ),
-                                                highlightedTextStyle:
-                                                    const TextStyle(
-                                                  fontSize: 25,
-                                                  color: Colors.black,
-                                                ),
-                                                time:
-                                                    _time, // Передаем DateTime
-                                                onTimeChange: (time) {
-                                                  setState(() {
-                                                    _time =
-                                                        time; // Обновляем DateTime
-                                                    print(
-                                                        _time.hour.toString() +
-                                                            _time.minute
-                                                                .toString());
-                                                  });
+                                                onChanged: (text) {
+                                                  setState(() {});
                                                 },
+                                                maxLength: 40,
                                               ),
-                                              TextButton(
-                                                  onPressed: null,
-                                                  child: Text('Без времени'))
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  TimePickerSpinner(
+                                                    spacing: 0,
+                                                    itemHeight: 40,
+                                                    normalTextStyle:
+                                                        const TextStyle(
+                                                      fontSize: 25,
+                                                      color: Colors.grey,
+                                                    ),
+                                                    highlightedTextStyle:
+                                                        TextStyle(
+                                                      fontSize: 25,
+                                                      color: noTime
+                                                          ? Colors.grey
+                                                          : Colors.black,
+                                                    ),
+                                                    time: _time,
+                                                    onTimeChange: (time) {
+                                                      setState(() {
+                                                        _time =
+                                                            time; // Форматируем время
+                                                      });
+                                                    },
+                                                  ),
+                                                  // Switch
+                                                  Switch(
+                                                    value: switchvalue,
+                                                    onChanged: (bool value) {
+                                                      setState(() {
+                                                        switchvalue = value;
+                                                        noTime = !value;
+                                                      });
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
                                             ],
                                           ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                              setState(() {
+                                                _newnameController.clear();
+                                              });
+                                            },
+                                            child: Text(
+                                              'Отмена',
+                                              style:
+                                                  TextStyle(color: Colors.red),
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: () async {
+                                              Navigator.of(context).pop();
+                                              await updatePlan(plans[index]);
+                                              setState(() {
+                                                _newnameController.clear();
+                                              });
+                                            },
+                                            child: Text('Готово'),
+                                          ),
                                         ],
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          setState(() {
-                                            _newnameController.clear();
-                                          });
-                                        },
-                                        child: Text(
-                                          'Отмена',
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () async {
-                                          Navigator.of(context).pop();
-                                          await updatePlan(plans[index]);
-                                          setState(() {
-                                            _newnameController.clear();
-                                          });
-                                        },
-                                        child: Text(
-                                          'Готово',
-                                        ),
-                                      ),
-                                    ],
+                                      );
+                                    },
                                   );
                                 },
                               );
