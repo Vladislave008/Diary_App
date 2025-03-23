@@ -260,6 +260,16 @@ class _PlansPageState extends State<PlansPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.mounted) {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => NavigationExample(),
+              ));
+            }
+          },
+        ),
         backgroundColor: const Color.fromARGB(110, 168, 195, 212),
         title: isSelectionMode
             ? Text('Выбрано: ${selectedIndices.length}')

@@ -134,4 +134,4 @@ if __name__ == "__main__":
     
 # python C:/Users/BAAL/Desktop/diary_app/lib/main.py
 # adb shell ip route
-# adb connect 172.25.0.11:5555
+# adb connect 172.25.0.3:5555

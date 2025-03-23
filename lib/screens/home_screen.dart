@@ -7,6 +7,8 @@ import 'package:namer_app/screens/tab_screen.dart';
 import 'package:namer_app/screens/notes_screen.dart';
 import 'package:namer_app/screens/plans_screen.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NavigationExample extends StatefulWidget {
   const NavigationExample({super.key});
@@ -21,8 +23,113 @@ class _NavigationExampleState extends State<NavigationExample> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
+  List<String> plans = [];
+  List<String> times = [];
+
+  String plan_to_show = '';
+  String plan_time_to_show = '';
+
+  bool switchvalue = true;
+  bool isLoading = false;
+  bool noTime = false;
+  int nules = 0;
+  final SupabaseClient supabase = Supabase.instance.client;
+
   void _closeDrawer() {
     Navigator.of(context).pop();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPlans();
+  }
+
+  Future<void> fetchPlans() async {
+    setState(() {
+      isLoading = true;
+    });
+    if (FirebaseAuth.instance.currentUser == null) {
+      print('User not logged in');
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final response = await supabase
+          .from('plans')
+          .select('name')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('date', DateTime.now().toLocal().toString().substring(0, 11));
+
+      setState(() {
+        plans = List<String>.from(response.map((tab) => tab['name'] as String));
+      });
+
+      final response2 = await supabase
+          .from('plans')
+          .select('time')
+          .eq('user_id', FirebaseAuth.instance.currentUser!.uid)
+          .eq('date', DateTime.now().toLocal().toString().substring(0, 11));
+
+      setState(() {
+        times =
+            List<String>.from(response2.map((tab) => tab['time'] as String));
+      });
+    } catch (e) {
+      print('Ошибка при загрузке списков: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
+        );
+      }
+    }
+
+    int mini_hour = 1000;
+    int mini_minute = 1000;
+    nules = 0;
+
+    for (int i = 0; i < plans.length; i++) {
+      if (times[i] == ' ' || plans[i] == ' ') {
+        nules++;
+      } else if (int.parse(times[i].substring(0, 2)) < DateTime.now().hour ||
+          (int.parse(times[i].substring(0, 2)) == DateTime.now().hour &&
+              int.parse(times[i].substring(
+                    3,
+                  )) <
+                  DateTime.now().minute)) {
+        nules++;
+      } else if (int.parse(times[i].substring(0, 2)) < mini_hour ||
+          (int.parse(times[i].substring(0, 2)) == mini_hour &&
+              int.parse(times[i].substring(
+                    3,
+                  )) <
+                  mini_minute)) {
+        mini_hour = int.parse(times[i].substring(0, 2));
+        mini_minute = int.parse(times[i].substring(
+          3,
+        ));
+        plan_time_to_show = times[i];
+        plan_to_show = plans[i];
+      }
+      ;
+    }
+    print(nules);
+    if (nules == plans.length && plans.length != 0) {
+      plan_time_to_show = times[0];
+      plan_to_show = plans[0];
+      if (plan_to_show.length > 22) {
+        plan_to_show = plan_to_show.substring(0, 20) + '...';
+      }
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+    print(plans);
+    print(times);
   }
 
   @override
@@ -155,7 +262,8 @@ class _NavigationExampleState extends State<NavigationExample> {
               ],
             ),
           ),
-          child: Column(children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Container(
               decoration: BoxDecoration(
                 color: Color.fromARGB(160, 255, 255, 255),
@@ -197,7 +305,34 @@ class _NavigationExampleState extends State<NavigationExample> {
                 ),
               ),
             ),
-            Expanded(child: Text('')),
+            SizedBox(height: 10),
+            Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(160, 255, 255, 255),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: ListTile(
+                    leading: Icon(Icons.alarm),
+                    trailing: plans.length == 0 || plan_to_show == ' '
+                        ? null
+                        : Text(
+                            'Планы на сегодня',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                    onTap: () {
+                      if (context.mounted) {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => PlansPage(Date: DateTime.now()),
+                        ));
+                      }
+                    },
+                    subtitle: plans.length == 0 || plan_to_show == ' '
+                        ? null
+                        : Text(plan_time_to_show),
+                    title: plans.length == 0 || plan_to_show == ' '
+                        ? Text('Нет планов на сегодня')
+                        : Text(plan_to_show))),
           ]),
         ),
         Container(
