@@ -20,6 +20,7 @@ class _PlansPageState extends State<PlansPage> {
   bool switchvalue = true;
   bool isLoading = false;
   bool noTime = false;
+  int time_to_highlite = 30;
 
   final TextEditingController _newnameController = TextEditingController();
   DateTime _time = DateTime.now();
@@ -58,10 +59,80 @@ class _PlansPageState extends State<PlansPage> {
     title = '$date $monthName $year';
     super.initState();
     fetchPlans();
-    print(widget.Date.toLocal().toString().substring(0, 11));
   }
 
   final SupabaseClient supabase = Supabase.instance.client;
+
+  void sortLists() {
+    List<String> plans_new = [plans[0]];
+    List<String> times_new = [times[0]];
+
+    for (int i = 1; i < times.length; i++) {
+      if (times[i] == ' ') {
+        times_new.insert(times_new.length, times[i]);
+        plans_new.insert(plans_new.length, plans[i]);
+      } else {
+        int flag = 0;
+        for (int j = 0; j < times_new.length; j++) {
+          if (times_new[j] == ' ' && flag == 0) {
+            times_new.insert(j, times[i]);
+            plans_new.insert(j, plans[i]);
+            flag = 1;
+          }
+
+          if (times_new[j] != ' ' && flag == 0) {
+            int time_cur = int.parse(times[i].substring(0, 2)) * 60 +
+                int.parse(times[i].substring(
+                  3,
+                ));
+            int time_to_compare = int.parse(times_new[j].substring(0, 2)) * 60 +
+                int.parse(times_new[j].substring(
+                  3,
+                ));
+
+            if (time_cur < time_to_compare) {
+              times_new.insert(j, times[i]);
+              plans_new.insert(j, plans[i]);
+              flag = 1;
+            }
+          }
+        }
+
+        if (flag == 0) {
+          times_new.insert(times_new.length, times[i]);
+          plans_new.insert(plans_new.length, plans[i]);
+          flag = 1;
+        }
+      }
+    }
+    setState(() {
+      times = times_new;
+      plans = plans_new;
+      times_new = [];
+      plans_new = [];
+    });
+
+    for (int i = 0; i < plans.length; i++) {
+      if (times[i] == ' ') {
+        times_new.insert(times_new.length, times[i]);
+        plans_new.insert(plans_new.length, plans[i]);
+      } else if ((int.parse(times[i].substring(0, 2)) * 60 +
+              int.parse(times[i].substring(
+                3,
+              ))) >=
+          (DateTime.now().hour * 60 + DateTime.now().minute)) {
+        times_new.insert(times_new.length, times[i]);
+        plans_new.insert(plans_new.length, plans[i]);
+      }
+    }
+    setState(() {
+      times = times_new;
+      plans = plans_new;
+
+      times_new = [];
+      plans_new = [];
+    });
+  }
 
   Future<void> fetchPlans() async {
     setState(() {
@@ -104,7 +175,7 @@ class _PlansPageState extends State<PlansPage> {
         );
       }
     }
-
+    sortLists();
     setState(() {
       isLoading = false;
     });
@@ -248,6 +319,26 @@ class _PlansPageState extends State<PlansPage> {
         isSelectionMode = false;
       }
     });
+  }
+
+  bool checkHighlight(String time) {
+    if (time != ' ') {
+      if ((int.parse(time.substring(0, 2)) * 60 +
+                      int.parse(time.substring(
+                        3,
+                      ))) -
+                  (DateTime.now().hour * 60 + DateTime.now().minute) <=
+              time_to_highlite &&
+          (int.parse(time.substring(0, 2)) * 60 +
+                      int.parse(time.substring(
+                        3,
+                      ))) -
+                  (DateTime.now().hour * 60 + DateTime.now().minute) >
+              0) {
+        return true;
+      }
+    }
+    return false;
   }
 
   String formatTime(DateTime time) {
@@ -451,7 +542,7 @@ class _PlansPageState extends State<PlansPage> {
                                                 onChanged: (text) {
                                                   setState(() {});
                                                 },
-                                                maxLength: 40,
+                                                maxLength: 60,
                                               ),
                                               Row(
                                                 mainAxisAlignment:
@@ -527,7 +618,6 @@ class _PlansPageState extends State<PlansPage> {
                                 },
                               );
                             }
-                            ;
                           },
                           onLongPress: () {
                             setState(() {
@@ -550,7 +640,11 @@ class _PlansPageState extends State<PlansPage> {
                                         },
                                       )
                                     ])
-                              : null),
+                              : checkHighlight(times[index])
+                                  ? Icon(Icons.query_builder_rounded,
+                                      color: const Color.fromARGB(
+                                          255, 226, 69, 58))
+                                  : null),
                     );
                   },
                 ),

@@ -369,9 +369,10 @@ class _NotesScreenState extends State<NotesScreen> {
                     if (firstIndex < notes.length) {
                       if (notes[firstIndex].contains('-*-*-*--')) {
                         name1 = '';
-                      } else if (notes[firstIndex].length > 25) {
-                        name1 = notes[firstIndex].substring(0, 19) + '...';
-                      } else if (notes[firstIndex].length <= 25) {
+                      } else if (notes[firstIndex].length > 35) {
+                        name1 =
+                            notes[firstIndex].substring(0, 20) + '\n' + '...';
+                      } else if (notes[firstIndex].length <= 35) {
                         name1 = notes[firstIndex];
                       }
                     }
@@ -379,9 +380,10 @@ class _NotesScreenState extends State<NotesScreen> {
                     if (secondIndex < notes.length) {
                       if (notes[secondIndex].contains('-*-*-*--')) {
                         name2 = '';
-                      } else if (notes[secondIndex].length > 25) {
-                        name2 = notes[secondIndex].substring(0, 19) + '...';
-                      } else if (notes[secondIndex].length <= 25) {
+                      } else if (notes[secondIndex].length > 35) {
+                        name2 =
+                            notes[secondIndex].substring(0, 20) + '\n' + '...';
+                      } else if (notes[secondIndex].length <= 35) {
                         name2 = notes[secondIndex];
                       }
                     }
@@ -397,7 +399,7 @@ class _NotesScreenState extends State<NotesScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             margin: EdgeInsets.all(8.0),
-                            height: 100,
+                            height: 150,
                             child: ListTile(
                               trailing: IconButton(
                                 icon: Icon(

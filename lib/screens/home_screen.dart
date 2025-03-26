@@ -117,12 +117,14 @@ class _NavigationExampleState extends State<NavigationExample> {
       ;
     }
     print(nules);
+
     if (nules == plans.length && plans.length != 0) {
       plan_time_to_show = times[0];
       plan_to_show = plans[0];
+      /*
       if (plan_to_show.length > 22) {
         plan_to_show = plan_to_show.substring(0, 20) + '...';
-      }
+      }*/
     }
 
     setState(() {
@@ -331,8 +333,12 @@ class _NavigationExampleState extends State<NavigationExample> {
                         ? null
                         : Text(plan_time_to_show),
                     title: plans.length == 0 || plan_to_show == ' '
-                        ? Text('Нет планов на сегодня')
-                        : Text(plan_to_show))),
+                        ? SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text('Нет планов на сегодня'))
+                        : SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text(plan_to_show)))),
           ]),
         ),
         Container(
