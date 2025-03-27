@@ -7,6 +7,7 @@ import 'package:namer_app/widgets/auth_form.dart';
 import 'package:namer_app/widgets/reg_form.dart';
 import 'package:namer_app/providers/provider.dart';
 import 'package:provider/provider.dart';
+//import 'package:supabase_flutter/supabase_flutter.dart';
 
 // test_of_git_push
 class AuthScreen extends StatefulWidget {
@@ -23,7 +24,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController passwordConfirmController =
       TextEditingController();
-
+  //final SupabaseClient supabase = Supabase.instance.client;
   @override
   void dispose() {
     emailController.dispose();
@@ -32,6 +33,7 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
+  void userTable(String id) {}
   @override
   Widget build(BuildContext context) {
     Provider.of<ContextProvider>(context, listen: false).setContext(context);

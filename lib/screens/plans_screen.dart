@@ -20,6 +20,7 @@ class _PlansPageState extends State<PlansPage> {
   bool switchvalue = true;
   bool isLoading = false;
   bool noTime = false;
+  bool _showOldPlans = false;
   int time_to_highlite = 30;
 
   final TextEditingController _newnameController = TextEditingController();
@@ -64,74 +65,78 @@ class _PlansPageState extends State<PlansPage> {
   final SupabaseClient supabase = Supabase.instance.client;
 
   void sortLists() {
-    List<String> plans_new = [plans[0]];
-    List<String> times_new = [times[0]];
+    if (plans.length != 0) {
+      List<String> plans_new = [plans[0]];
+      List<String> times_new = [times[0]];
 
-    for (int i = 1; i < times.length; i++) {
-      if (times[i] == ' ') {
-        times_new.insert(times_new.length, times[i]);
-        plans_new.insert(plans_new.length, plans[i]);
-      } else {
-        int flag = 0;
-        for (int j = 0; j < times_new.length; j++) {
-          if (times_new[j] == ' ' && flag == 0) {
-            times_new.insert(j, times[i]);
-            plans_new.insert(j, plans[i]);
-            flag = 1;
-          }
-
-          if (times_new[j] != ' ' && flag == 0) {
-            int time_cur = int.parse(times[i].substring(0, 2)) * 60 +
-                int.parse(times[i].substring(
-                  3,
-                ));
-            int time_to_compare = int.parse(times_new[j].substring(0, 2)) * 60 +
-                int.parse(times_new[j].substring(
-                  3,
-                ));
-
-            if (time_cur < time_to_compare) {
+      for (int i = 1; i < times.length; i++) {
+        if (times[i] == ' ') {
+          times_new.insert(times_new.length, times[i]);
+          plans_new.insert(plans_new.length, plans[i]);
+        } else {
+          int flag = 0;
+          for (int j = 0; j < times_new.length; j++) {
+            if (times_new[j] == ' ' && flag == 0) {
               times_new.insert(j, times[i]);
               plans_new.insert(j, plans[i]);
               flag = 1;
             }
+
+            if (times_new[j] != ' ' && flag == 0) {
+              int time_cur = int.parse(times[i].substring(0, 2)) * 60 +
+                  int.parse(times[i].substring(
+                    3,
+                  ));
+              int time_to_compare =
+                  int.parse(times_new[j].substring(0, 2)) * 60 +
+                      int.parse(times_new[j].substring(
+                        3,
+                      ));
+
+              if (time_cur < time_to_compare) {
+                times_new.insert(j, times[i]);
+                plans_new.insert(j, plans[i]);
+                flag = 1;
+              }
+            }
+          }
+
+          if (flag == 0) {
+            times_new.insert(times_new.length, times[i]);
+            plans_new.insert(plans_new.length, plans[i]);
+            flag = 1;
           }
         }
-
-        if (flag == 0) {
-          times_new.insert(times_new.length, times[i]);
-          plans_new.insert(plans_new.length, plans[i]);
-          flag = 1;
+      }
+      setState(() {
+        times = times_new;
+        plans = plans_new;
+        times_new = [];
+        plans_new = [];
+      });
+      if (_showOldPlans == false) {
+        for (int i = 0; i < plans.length; i++) {
+          if (times[i] == ' ') {
+            times_new.insert(times_new.length, times[i]);
+            plans_new.insert(plans_new.length, plans[i]);
+          } else if ((int.parse(times[i].substring(0, 2)) * 60 +
+                  int.parse(times[i].substring(
+                    3,
+                  ))) >=
+              (DateTime.now().hour * 60 + DateTime.now().minute)) {
+            times_new.insert(times_new.length, times[i]);
+            plans_new.insert(plans_new.length, plans[i]);
+          }
         }
+        setState(() {
+          times = times_new;
+          plans = plans_new;
+
+          times_new = [];
+          plans_new = [];
+        });
       }
     }
-    setState(() {
-      times = times_new;
-      plans = plans_new;
-      times_new = [];
-      plans_new = [];
-    });
-
-    for (int i = 0; i < plans.length; i++) {
-      if (times[i] == ' ') {
-        times_new.insert(times_new.length, times[i]);
-        plans_new.insert(plans_new.length, plans[i]);
-      } else if ((int.parse(times[i].substring(0, 2)) * 60 +
-              int.parse(times[i].substring(
-                3,
-              ))) >=
-          (DateTime.now().hour * 60 + DateTime.now().minute)) {
-        times_new.insert(times_new.length, times[i]);
-        plans_new.insert(plans_new.length, plans[i]);
-      }
-    }
-    setState(() {
-      times = times_new;
-      plans = plans_new;
-
-      times_new = [];
-      plans_new = [];
-    });
   }
 
   Future<void> fetchPlans() async {
@@ -144,6 +149,28 @@ class _PlansPageState extends State<PlansPage> {
         isLoading = false;
       });
       return;
+    }
+
+    try {
+      final response =
+          await supabase.from('user_optional').select('plans_notify_time');
+      setState(() {
+        time_to_highlite = int.parse(List<String>.from(
+            response.map((tab) => tab['plans_notify_time'] as String))[0]);
+      });
+      final response1 =
+          await supabase.from('user_optional').select('show_old_plans');
+      setState(() {
+        _showOldPlans = List<bool>.from(
+            response1.map((tab) => tab['show_old_plans'] as bool))[0];
+      });
+    } catch (e) {
+      print('Ошибка $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка $e')),
+        );
+      }
     }
 
     try {

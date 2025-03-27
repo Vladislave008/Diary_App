@@ -25,6 +25,7 @@ class _NavigationExampleState extends State<NavigationExample> {
 
   List<String> plans = [];
   List<String> times = [];
+  List<String> ids = [];
 
   String plan_to_show = '';
   String plan_time_to_show = '';
@@ -33,6 +34,7 @@ class _NavigationExampleState extends State<NavigationExample> {
   bool isLoading = false;
   bool noTime = false;
   int nules = 0;
+
   final SupabaseClient supabase = Supabase.instance.client;
 
   void _closeDrawer() {
@@ -57,6 +59,36 @@ class _NavigationExampleState extends State<NavigationExample> {
       return;
     }
 
+    try {
+      final response = await supabase.from('user_optional').select('id');
+      setState(() {
+        ids = List<String>.from(response.map((tab) => tab['id'] as String));
+      });
+    } catch (e) {
+      print('Ошибка при загрузке списков: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при загрузке списков: $e')),
+        );
+      }
+    }
+
+    if (!(ids.contains(FirebaseAuth.instance.currentUser!.uid))) {
+      try {
+        await supabase.from('user_optional').insert([
+          {
+            'id': FirebaseAuth.instance.currentUser!.uid,
+          }
+        ]);
+      } catch (e) {
+        print('Ошибка при добавлении писка: $e');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Ошибка при добавлении списка: $e')),
+          );
+        }
+      }
+    }
     try {
       final response = await supabase
           .from('plans')
@@ -87,51 +119,81 @@ class _NavigationExampleState extends State<NavigationExample> {
       }
     }
 
-    int mini_hour = 1000;
-    int mini_minute = 1000;
-    nules = 0;
+    if (plans.length != 0) {
+      List<String> plans_new = [plans[0]];
+      List<String> times_new = [times[0]];
 
-    for (int i = 0; i < plans.length; i++) {
-      if (times[i] == ' ' || plans[i] == ' ') {
-        nules++;
-      } else if (int.parse(times[i].substring(0, 2)) < DateTime.now().hour ||
-          (int.parse(times[i].substring(0, 2)) == DateTime.now().hour &&
-              int.parse(times[i].substring(
+      for (int i = 1; i < times.length; i++) {
+        if (times[i] == ' ') {
+          times_new.insert(times_new.length, times[i]);
+          plans_new.insert(plans_new.length, plans[i]);
+        } else {
+          int flag = 0;
+          for (int j = 0; j < times_new.length; j++) {
+            if (times_new[j] == ' ' && flag == 0) {
+              times_new.insert(j, times[i]);
+              plans_new.insert(j, plans[i]);
+              flag = 1;
+            }
+
+            if (times_new[j] != ' ' && flag == 0) {
+              int time_cur = int.parse(times[i].substring(0, 2)) * 60 +
+                  int.parse(times[i].substring(
                     3,
-                  )) <
-                  DateTime.now().minute)) {
-        nules++;
-      } else if (int.parse(times[i].substring(0, 2)) < mini_hour ||
-          (int.parse(times[i].substring(0, 2)) == mini_hour &&
-              int.parse(times[i].substring(
-                    3,
-                  )) <
-                  mini_minute)) {
-        mini_hour = int.parse(times[i].substring(0, 2));
-        mini_minute = int.parse(times[i].substring(
-          3,
-        ));
-        plan_time_to_show = times[i];
-        plan_to_show = plans[i];
+                  ));
+              int time_to_compare =
+                  int.parse(times_new[j].substring(0, 2)) * 60 +
+                      int.parse(times_new[j].substring(
+                        3,
+                      ));
+
+              if (time_cur < time_to_compare) {
+                times_new.insert(j, times[i]);
+                plans_new.insert(j, plans[i]);
+                flag = 1;
+              }
+            }
+          }
+
+          if (flag == 0) {
+            times_new.insert(times_new.length, times[i]);
+            plans_new.insert(plans_new.length, plans[i]);
+            flag = 1;
+          }
+        }
       }
-      ;
-    }
-    print(nules);
+      setState(() {
+        times = times_new;
+        plans = plans_new;
+        times_new = [];
+        plans_new = [];
+      });
 
-    if (nules == plans.length && plans.length != 0) {
-      plan_time_to_show = times[0];
-      plan_to_show = plans[0];
-      /*
-      if (plan_to_show.length > 22) {
-        plan_to_show = plan_to_show.substring(0, 20) + '...';
-      }*/
+      for (int i = 0; i < plans.length; i++) {
+        if (times[i] == ' ') {
+          times_new.insert(times_new.length, times[i]);
+          plans_new.insert(plans_new.length, plans[i]);
+        } else if ((int.parse(times[i].substring(0, 2)) * 60 +
+                int.parse(times[i].substring(
+                  3,
+                ))) >=
+            (DateTime.now().hour * 60 + DateTime.now().minute)) {
+          times_new.insert(times_new.length, times[i]);
+          plans_new.insert(plans_new.length, plans[i]);
+        }
+      }
+      setState(() {
+        times = times_new;
+        plans = plans_new;
+
+        times_new = [];
+        plans_new = [];
+      });
     }
 
     setState(() {
       isLoading = false;
     });
-    print(plans);
-    print(times);
   }
 
   @override
@@ -329,16 +391,14 @@ class _NavigationExampleState extends State<NavigationExample> {
                         ));
                       }
                     },
-                    subtitle: plans.length == 0 || plan_to_show == ' '
-                        ? null
-                        : Text(plan_time_to_show),
-                    title: plans.length == 0 || plan_to_show == ' '
+                    subtitle: times.length == 0 ? null : Text(times[0]),
+                    title: plans.length == 0
                         ? SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            child: Text('Нет планов на сегодня'))
+                            child: Text('Нет ближайших планов'))
                         : SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            child: Text(plan_to_show)))),
+                            child: Text(plans[0])))),
           ]),
         ),
         Container(
