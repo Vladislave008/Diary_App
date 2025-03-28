@@ -42,14 +42,17 @@ class _PlansPageState extends State<PlansPage> {
   ];
 
   String title = '';
-
+  String date_cur = '';
   Set<int> selectedIndices = {};
   bool isSelectionMode = false;
 
   @override
   void initState() {
+    print(DateTime.now());
+    print(widget.Date);
+    date_cur = widget.Date.toLocal().toString().substring(0, 11);
     String monthIndexStr = widget.Date.toLocal().toString().substring(5, 7);
-    String date = widget.Date.toLocal().toString().substring(8, 10);
+    String date = widget.Date.toLocal().toString().substring(8, 11);
     if (date[0] == '0') {
       date = date.substring(1, 2);
     }
@@ -58,6 +61,7 @@ class _PlansPageState extends State<PlansPage> {
     String monthName = months[monthIndex];
 
     title = '$date $monthName $year';
+
     super.initState();
     fetchPlans();
   }
@@ -114,9 +118,26 @@ class _PlansPageState extends State<PlansPage> {
         times_new = [];
         plans_new = [];
       });
+
+      int month = int.parse(widget.Date.toLocal().toString().substring(5, 7));
+      int day = int.parse(widget.Date.toLocal().toString().substring(8, 10));
+      int year = int.parse(widget.Date.toLocal().toString().substring(0, 4));
+      int year_cur = DateTime.now().year;
+      int month_cur = DateTime.now().month;
+      int day_cur = DateTime.now().day;
+
       if (_showOldPlans == false) {
         for (int i = 0; i < plans.length; i++) {
-          if (times[i] == ' ') {
+          if ((year > year_cur) ||
+              (year == year_cur && month > month_cur) ||
+              (year == year_cur && month == month_cur && day > day_cur)) {
+            times_new.insert(times_new.length, times[i]);
+            plans_new.insert(plans_new.length, plans[i]);
+          } else if (((year < year_cur) ||
+                  (year == year_cur && month < month_cur) ||
+                  (year == year_cur && month == month_cur && day < day_cur)) &&
+              (times[i] != ' ' || plans[i] != ' ')) {
+          } else if (times[i] == ' ') {
             times_new.insert(times_new.length, times[i]);
             plans_new.insert(plans_new.length, plans[i]);
           } else if ((int.parse(times[i].substring(0, 2)) * 60 +
@@ -211,7 +232,7 @@ class _PlansPageState extends State<PlansPage> {
   }
 
   Future<void> addPlan() async {
-    if (plans.contains('')) {
+    if (plans.contains(' ')) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Уже существует пустой план')),
@@ -223,7 +244,7 @@ class _PlansPageState extends State<PlansPage> {
     try {
       await supabase.from('plans').insert([
         {
-          'name': '',
+          'name': ' ',
           'user_id': FirebaseAuth.instance.currentUser!.uid,
           'date': widget.Date.toLocal().toString().substring(0, 11)
         }
@@ -349,20 +370,24 @@ class _PlansPageState extends State<PlansPage> {
   }
 
   bool checkHighlight(String time) {
-    if (time != ' ') {
-      if ((int.parse(time.substring(0, 2)) * 60 +
-                      int.parse(time.substring(
-                        3,
-                      ))) -
-                  (DateTime.now().hour * 60 + DateTime.now().minute) <=
-              time_to_highlite &&
-          (int.parse(time.substring(0, 2)) * 60 +
-                      int.parse(time.substring(
-                        3,
-                      ))) -
-                  (DateTime.now().hour * 60 + DateTime.now().minute) >
-              0) {
-        return true;
+    //print(date_cur == DateTime.now().toLocal().toString().substring(0, 10));
+
+    if (date_cur == DateTime.now().toLocal().toString().substring(0, 11)) {
+      if (time != ' ') {
+        if ((int.parse(time.substring(0, 2)) * 60 +
+                        int.parse(time.substring(
+                          3,
+                        ))) -
+                    (DateTime.now().hour * 60 + DateTime.now().minute) <=
+                time_to_highlite &&
+            (int.parse(time.substring(0, 2)) * 60 +
+                        int.parse(time.substring(
+                          3,
+                        ))) -
+                    (DateTime.now().hour * 60 + DateTime.now().minute) >
+                0) {
+          return true;
+        }
       }
     }
     return false;

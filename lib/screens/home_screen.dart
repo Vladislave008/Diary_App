@@ -203,19 +203,37 @@ class _NavigationExampleState extends State<NavigationExample> {
       appBar: AppBar(
           title: const Text('Diary App'),
           backgroundColor: const Color.fromARGB(110, 168, 195, 212),
-          actions: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.settings),
-              tooltip: 'Settings',
-              onPressed: () {
-                if (context.mounted) {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => SettingsScreen(),
-                  ));
-                }
-              },
-            )
-          ]),
+          actions: isLoading
+              ? [
+                  CircularProgressIndicator(
+                    strokeWidth: 3,
+                    //color: const Color.fromARGB(255, 255, 115, 0),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.settings),
+                    tooltip: 'Settings',
+                    onPressed: () {
+                      if (context.mounted) {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => SettingsScreen(),
+                        ));
+                      }
+                    },
+                  )
+                ]
+              : [
+                  IconButton(
+                    icon: const Icon(Icons.settings),
+                    tooltip: 'Settings',
+                    onPressed: () {
+                      if (context.mounted) {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => SettingsScreen(),
+                        ));
+                      }
+                    },
+                  )
+                ]),
       drawer: Drawer(
         child: Center(
           child: Container(
@@ -391,11 +409,15 @@ class _NavigationExampleState extends State<NavigationExample> {
                         ));
                       }
                     },
-                    subtitle: times.length == 0 ? null : Text(times[0]),
+                    subtitle: times.length == 0
+                        ? null
+                        : times[0] == ' '
+                            ? null
+                            : Text(times[0]),
                     title: plans.length == 0
                         ? SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            child: Text('Нет ближайших планов'))
+                            child: Text('Нет планов на сегодня'))
                         : SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Text(plans[0])))),
