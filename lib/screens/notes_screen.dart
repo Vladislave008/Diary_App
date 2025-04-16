@@ -369,10 +369,7 @@ class _NotesScreenState extends State<NotesScreen> {
                     if (firstIndex < notes.length) {
                       if (notes[firstIndex].contains('-*-*-*--')) {
                         name1 = '';
-                      } else if (notes[firstIndex].length > 35) {
-                        name1 =
-                            notes[firstIndex].substring(0, 20) + '\n' + '...';
-                      } else if (notes[firstIndex].length <= 35) {
+                      } else {
                         name1 = notes[firstIndex];
                       }
                     }
@@ -380,57 +377,71 @@ class _NotesScreenState extends State<NotesScreen> {
                     if (secondIndex < notes.length) {
                       if (notes[secondIndex].contains('-*-*-*--')) {
                         name2 = '';
-                      } else if (notes[secondIndex].length > 35) {
-                        name2 =
-                            notes[secondIndex].substring(0, 20) + '\n' + '...';
-                      } else if (notes[secondIndex].length <= 35) {
+                      } else {
                         name2 = notes[secondIndex];
                       }
                     }
                     return Row(
                       children: [
                         Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: selectedIndices.contains(firstIndex) &&
-                                      isSelectionMode
-                                  ? Color.fromARGB(255, 245, 163, 163)
-                                  : Color.fromARGB(160, 255, 255, 255),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            margin: EdgeInsets.all(8.0),
-                            height: 150,
-                            child: ListTile(
-                              trailing: IconButton(
-                                icon: Icon(
-                                    pins[firstIndex]
-                                        ? Icons.star_rounded
-                                        : Icons.star_outline_rounded,
-                                    color: pins[firstIndex]
-                                        ? const Color.fromARGB(255, 238, 143, 0)
-                                        : null),
-                                selectedIcon: Icon(Icons.star_rounded),
-                                onPressed: () {
-                                  pinNote(firstIndex);
-                                },
-                              ),
-                              title: Text(name1),
-                              onLongPress: () {
-                                setState(() {
-                                  isSelectionMode = true;
-                                  toggleSelection(firstIndex);
-                                });
-                              },
-                              onTap: () {
-                                if (isSelectionMode) {
-                                  toggleSelection(firstIndex);
-                                } else {
-                                  _navigateToNoteContentPage(notes[firstIndex]);
-                                }
-                              },
-                            ),
-                          ),
-                        ),
+                            child: Container(
+                                decoration: BoxDecoration(
+                                  color: selectedIndices.contains(firstIndex) &&
+                                          isSelectionMode
+                                      ? Color.fromARGB(255, 245, 163, 163)
+                                      : Color.fromARGB(160, 255, 255, 255),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                margin: EdgeInsets.all(8.0),
+                                height: 170,
+                                child: ShaderMask(
+                                    shaderCallback: (Rect bounds) {
+                                      return LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.black,
+                                          Colors.transparent
+                                        ],
+                                        stops: [
+                                          0.4,
+                                          1.0
+                                        ], // Настраиваем, где начинается прозрачность
+                                      ).createShader(bounds);
+                                    },
+                                    blendMode: BlendMode
+                                        .dstIn, // Маскирует текст по градиенту
+                                    child: ListTile(
+                                      trailing: IconButton(
+                                        icon: Icon(
+                                            pins[firstIndex]
+                                                ? Icons.star_rounded
+                                                : Icons.star_outline_rounded,
+                                            color: pins[firstIndex]
+                                                ? const Color.fromARGB(
+                                                    255, 238, 143, 0)
+                                                : null),
+                                        selectedIcon: Icon(Icons.star_rounded),
+                                        onPressed: () {
+                                          pinNote(firstIndex);
+                                        },
+                                      ),
+                                      title: Text(name1),
+                                      onLongPress: () {
+                                        setState(() {
+                                          isSelectionMode = true;
+                                          toggleSelection(firstIndex);
+                                        });
+                                      },
+                                      onTap: () {
+                                        if (isSelectionMode) {
+                                          toggleSelection(firstIndex);
+                                        } else {
+                                          _navigateToNoteContentPage(
+                                              notes[firstIndex]);
+                                        }
+                                      },
+                                    )))),
                         if (secondIndex < notes.length)
                           Expanded(
                             child: Container(
@@ -442,38 +453,55 @@ class _NotesScreenState extends State<NotesScreen> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               margin: EdgeInsets.all(8.0),
-                              height: 100,
-                              child: ListTile(
-                                trailing: IconButton(
-                                  icon: Icon(
-                                      pins[secondIndex]
-                                          ? Icons.star_rounded
-                                          : Icons.star_outline_rounded,
-                                      color: pins[secondIndex]
-                                          ? const Color.fromARGB(
-                                              255, 238, 143, 0)
-                                          : null),
-                                  selectedIcon: Icon(Icons.star_rounded),
-                                  onPressed: () {
-                                    pinNote(secondIndex);
+                              height: 170,
+                              child: ShaderMask(
+                                  shaderCallback: (Rect bounds) {
+                                    return LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.black,
+                                        Colors.transparent
+                                      ],
+                                      stops: [
+                                        0.4,
+                                        1.0
+                                      ], // Настраиваем, где начинается прозрачность
+                                    ).createShader(bounds);
                                   },
-                                ),
-                                title: Text(name2),
-                                onLongPress: () {
-                                  setState(() {
-                                    isSelectionMode = true;
-                                    toggleSelection(secondIndex);
-                                  });
-                                },
-                                onTap: () {
-                                  if (isSelectionMode) {
-                                    toggleSelection(secondIndex);
-                                  } else {
-                                    _navigateToNoteContentPage(
-                                        notes[secondIndex]);
-                                  }
-                                },
-                              ),
+                                  blendMode: BlendMode
+                                      .dstIn, // Маскирует текст по градиенту
+                                  child: ListTile(
+                                    trailing: IconButton(
+                                      icon: Icon(
+                                          pins[secondIndex]
+                                              ? Icons.star_rounded
+                                              : Icons.star_outline_rounded,
+                                          color: pins[secondIndex]
+                                              ? const Color.fromARGB(
+                                                  255, 238, 143, 0)
+                                              : null),
+                                      selectedIcon: Icon(Icons.star_rounded),
+                                      onPressed: () {
+                                        pinNote(secondIndex);
+                                      },
+                                    ),
+                                    title: Text(name2),
+                                    onLongPress: () {
+                                      setState(() {
+                                        isSelectionMode = true;
+                                        toggleSelection(secondIndex);
+                                      });
+                                    },
+                                    onTap: () {
+                                      if (isSelectionMode) {
+                                        toggleSelection(secondIndex);
+                                      } else {
+                                        _navigateToNoteContentPage(
+                                            notes[secondIndex]);
+                                      }
+                                    },
+                                  )),
                             ),
                           ),
                         if (secondIndex >= notes.length)

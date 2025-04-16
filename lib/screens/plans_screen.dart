@@ -370,7 +370,7 @@ class _PlansPageState extends State<PlansPage> {
   }
 
   bool checkHighlight(String time) {
-    //print(date_cur == DateTime.now().toLocal().toString().substring(0, 10));
+
 
     if (date_cur == DateTime.now().toLocal().toString().substring(0, 11)) {
       if (time != ' ') {
