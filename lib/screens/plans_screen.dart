@@ -370,8 +370,6 @@ class _PlansPageState extends State<PlansPage> {
   }
 
   bool checkHighlight(String time) {
-
-
     if (date_cur == DateTime.now().toLocal().toString().substring(0, 11)) {
       if (time != ' ') {
         if ((int.parse(time.substring(0, 2)) * 60 +
@@ -538,7 +536,9 @@ class _PlansPageState extends State<PlansPage> {
                         color:
                             selectedIndices.contains(index) && isSelectionMode
                                 ? Color.fromARGB(255, 245, 163, 163)
-                                : Color.fromARGB(160, 255, 255, 255),
+                                : checkHighlight(times[index])
+                                    ? Color.fromARGB(195, 252, 188, 159)
+                                    : Color.fromARGB(160, 255, 255, 255),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       padding: const EdgeInsets.all(20.0),
@@ -569,7 +569,11 @@ class _PlansPageState extends State<PlansPage> {
                               toggleSelection(index);
                             } else {
                               setState(() {
-                                _newnameController.text = plans[index];
+                                if (plans[index] == ' ') {
+                                  _newnameController.clear();
+                                } else {
+                                  _newnameController.text = plans[index];
+                                }
                               });
                               showDialog(
                                 context: context,

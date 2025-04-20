@@ -120,6 +120,8 @@ class _NotesScreenState extends State<NotesScreen> {
       pins = pins_pinned.reversed.toList() + pins_not_pinned.reversed.toList();
       isLoading = false;
     });
+    print(notes);
+    print(pins);
   }
 
   Future<void> addNote() async {
@@ -172,6 +174,8 @@ class _NotesScreenState extends State<NotesScreen> {
         print('Error updating tab: $e');
       }
     }
+    print(notes);
+    print(pins);
     await fetchNotes();
   }
 
@@ -384,7 +388,21 @@ class _NotesScreenState extends State<NotesScreen> {
                     return Row(
                       children: [
                         Expanded(
-                            child: Container(
+                          child: InkWell(
+                              onTap: () {
+                                if (isSelectionMode) {
+                                  toggleSelection(firstIndex);
+                                } else {
+                                  _navigateToNoteContentPage(notes[firstIndex]);
+                                }
+                              },
+                              onLongPress: () {
+                                setState(() {
+                                  isSelectionMode = true;
+                                  toggleSelection(firstIndex);
+                                });
+                              },
+                              child: Container(
                                 decoration: BoxDecoration(
                                   color: selectedIndices.contains(firstIndex) &&
                                           isSelectionMode
@@ -394,115 +412,207 @@ class _NotesScreenState extends State<NotesScreen> {
                                 ),
                                 margin: EdgeInsets.all(8.0),
                                 height: 170,
-                                child: ShaderMask(
-                                    shaderCallback: (Rect bounds) {
-                                      return LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          Colors.black,
-                                          Colors.transparent
-                                        ],
-                                        stops: [
-                                          0.4,
-                                          1.0
-                                        ], // Настраиваем, где начинается прозрачность
-                                      ).createShader(bounds);
-                                    },
-                                    blendMode: BlendMode
-                                        .dstIn, // Маскирует текст по градиенту
-                                    child: ListTile(
-                                      trailing: IconButton(
-                                        icon: Icon(
-                                            pins[firstIndex]
-                                                ? Icons.star_rounded
-                                                : Icons.star_outline_rounded,
-                                            color: pins[firstIndex]
-                                                ? const Color.fromARGB(
-                                                    255, 238, 143, 0)
-                                                : null),
-                                        selectedIcon: Icon(Icons.star_rounded),
+                                clipBehavior: Clip
+                                    .antiAlias, // Обрезаем содержимое по границам контейнера
+                                child: Column(
+                                  children: [
+                                    // Кнопка на всю ширину (без паддинга)
+                                    SizedBox(
+                                      height: 25,
+                                      width: double
+                                          .infinity, // Растягиваем на всю ширину
+                                      child: ElevatedButton(
                                         onPressed: () {
                                           pinNote(firstIndex);
                                         },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: pins[firstIndex]
+                                              ? const Color.fromARGB(
+                                                  153, 238, 143, 0)
+                                              : Color.fromARGB(24, 0, 0, 0),
+                                          elevation: 2,
+                                          shadowColor: Colors.transparent,
+                                          padding: EdgeInsets.symmetric(
+                                              vertical: 10),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius
+                                                .zero, // Убираем скругление у кнопки
+                                          ),
+                                        ),
+                                        child: Text("Действие",
+                                            style: TextStyle(fontSize: 14)),
                                       ),
-                                      title: Text(name1),
-                                      onLongPress: () {
-                                        setState(() {
-                                          isSelectionMode = true;
-                                          toggleSelection(firstIndex);
-                                        });
-                                      },
-                                      onTap: () {
-                                        if (isSelectionMode) {
-                                          toggleSelection(firstIndex);
-                                        } else {
-                                          _navigateToNoteContentPage(
-                                              notes[firstIndex]);
-                                        }
-                                      },
-                                    )))),
+                                    ),
+
+                                    // Остальное содержимое с паддингом
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: Material(
+                                          type: MaterialType.transparency,
+                                          child: InkWell(
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            /*onTap: () {
+                                              if (isSelectionMode) {
+                                                toggleSelection(firstIndex);
+                                              } else {
+                                                _navigateToNoteContentPage(
+                                                    notes[firstIndex]);
+                                              }
+                                            },
+                                            onLongPress: () {
+                                              setState(() {
+                                                isSelectionMode = true;
+                                                toggleSelection(firstIndex);
+                                              });
+                                            },*/
+                                            child: ShaderMask(
+                                              shaderCallback: (Rect bounds) {
+                                                return LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: [
+                                                    Colors.black,
+                                                    Colors.transparent
+                                                  ],
+                                                  stops: [0.7, 1.0],
+                                                ).createShader(bounds);
+                                              },
+                                              blendMode: BlendMode.dstIn,
+                                              child: SingleChildScrollView(
+                                                physics:
+                                                    AlwaysScrollableScrollPhysics(),
+                                                child: Text(
+                                                  name1,
+                                                  style:
+                                                      TextStyle(fontSize: 16),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                        ),
                         if (secondIndex < notes.length)
                           Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: selectedIndices.contains(secondIndex) &&
-                                        isSelectionMode
-                                    ? Color.fromARGB(255, 245, 163, 163)
-                                    : Color.fromARGB(160, 255, 255, 255),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              margin: EdgeInsets.all(8.0),
-                              height: 170,
-                              child: ShaderMask(
-                                  shaderCallback: (Rect bounds) {
-                                    return LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.black,
-                                        Colors.transparent
-                                      ],
-                                      stops: [
-                                        0.4,
-                                        1.0
-                                      ], // Настраиваем, где начинается прозрачность
-                                    ).createShader(bounds);
-                                  },
-                                  blendMode: BlendMode
-                                      .dstIn, // Маскирует текст по градиенту
-                                  child: ListTile(
-                                    trailing: IconButton(
-                                      icon: Icon(
-                                          pins[secondIndex]
-                                              ? Icons.star_rounded
-                                              : Icons.star_outline_rounded,
-                                          color: pins[secondIndex]
-                                              ? const Color.fromARGB(
-                                                  255, 238, 143, 0)
-                                              : null),
-                                      selectedIcon: Icon(Icons.star_rounded),
-                                      onPressed: () {
-                                        pinNote(secondIndex);
-                                      },
-                                    ),
-                                    title: Text(name2),
-                                    onLongPress: () {
-                                      setState(() {
-                                        isSelectionMode = true;
-                                        toggleSelection(secondIndex);
-                                      });
-                                    },
-                                    onTap: () {
-                                      if (isSelectionMode) {
-                                        toggleSelection(secondIndex);
-                                      } else {
-                                        _navigateToNoteContentPage(
-                                            notes[secondIndex]);
-                                      }
-                                    },
-                                  )),
-                            ),
+                            child: InkWell(
+                                onTap: () {
+                                  if (isSelectionMode) {
+                                    toggleSelection(secondIndex);
+                                  } else {
+                                    _navigateToNoteContentPage(
+                                        notes[secondIndex]);
+                                  }
+                                },
+                                onLongPress: () {
+                                  setState(() {
+                                    isSelectionMode = true;
+                                    toggleSelection(secondIndex);
+                                  });
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: selectedIndices
+                                                .contains(secondIndex) &&
+                                            isSelectionMode
+                                        ? Color.fromARGB(255, 245, 163, 163)
+                                        : Color.fromARGB(160, 255, 255, 255),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  margin: EdgeInsets.all(8.0),
+                                  height: 170,
+                                  clipBehavior: Clip
+                                      .antiAlias, // Обрезаем содержимое по границам контейнера
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      // Кнопка на всю ширину (без паддинга)
+                                      SizedBox(
+                                        height: 25,
+                                        width: double
+                                            .infinity, // Растягиваем на всю ширину
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            pinNote(secondIndex);
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: pins[secondIndex]
+                                                ? const Color.fromARGB(
+                                                    153, 238, 143, 0)
+                                                : Color.fromARGB(24, 0, 0, 0),
+                                            elevation: 2,
+                                            shadowColor: Colors.transparent,
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 10),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius
+                                                  .zero, // Убираем скругление у кнопки
+                                            ),
+                                          ),
+                                          child: Text("Действие",
+                                              style: TextStyle(fontSize: 14)),
+                                        ),
+                                      ),
+
+                                      // Остальное содержимое с паддингом
+                                      Expanded(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(12),
+                                          child: Material(
+                                            type: MaterialType.transparency,
+                                            child: InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              /*onTap: () {
+                                            if (isSelectionMode) {
+                                              toggleSelection(secondIndex);
+                                            } else {
+                                              _navigateToNoteContentPage(
+                                                  notes[secondIndex]);
+                                            }
+                                          },
+                                          onLongPress: () {
+                                            setState(() {
+                                              isSelectionMode = true;
+                                              toggleSelection(secondIndex);
+                                            });
+                                          },*/
+                                              child: ShaderMask(
+                                                shaderCallback: (Rect bounds) {
+                                                  return LinearGradient(
+                                                    begin: Alignment.topCenter,
+                                                    end: Alignment.bottomCenter,
+                                                    colors: [
+                                                      Colors.black,
+                                                      Colors.transparent
+                                                    ],
+                                                    stops: [0.7, 1.0],
+                                                  ).createShader(bounds);
+                                                },
+                                                blendMode: BlendMode.dstIn,
+                                                child: SingleChildScrollView(
+                                                  physics:
+                                                      AlwaysScrollableScrollPhysics(),
+                                                  child: Text(
+                                                    name2,
+                                                    style:
+                                                        TextStyle(fontSize: 16),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )),
                           ),
                         if (secondIndex >= notes.length)
                           Expanded(
