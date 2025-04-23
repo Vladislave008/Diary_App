@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
 import 'package:namer_app/screens/home_screen.dart';
+import 'package:namer_app/screens/settings_screen.dart';
 
 class PlansPage extends StatefulWidget {
   final DateTime Date;
@@ -16,7 +17,8 @@ class PlansPage extends StatefulWidget {
 class _PlansPageState extends State<PlansPage> {
   List<String> plans = [];
   List<String> times = [];
-
+  List<String> old_plans = [];
+  List<String> old_times = [];
   bool switchvalue = true;
   bool isLoading = false;
   bool noTime = false;
@@ -60,7 +62,7 @@ class _PlansPageState extends State<PlansPage> {
     int monthIndex = int.parse(monthIndexStr) - 1;
     String monthName = months[monthIndex];
 
-    title = '$date $monthName $year';
+    title = '$date$monthName $year';
 
     super.initState();
     fetchPlans();
@@ -117,6 +119,8 @@ class _PlansPageState extends State<PlansPage> {
         plans = plans_new;
         times_new = [];
         plans_new = [];
+        old_plans = [];
+        old_times = [];
       });
 
       int month = int.parse(widget.Date.toLocal().toString().substring(5, 7));
@@ -126,37 +130,48 @@ class _PlansPageState extends State<PlansPage> {
       int month_cur = DateTime.now().month;
       int day_cur = DateTime.now().day;
 
-      if (_showOldPlans == false) {
-        for (int i = 0; i < plans.length; i++) {
-          if ((year > year_cur) ||
-              (year == year_cur && month > month_cur) ||
-              (year == year_cur && month == month_cur && day > day_cur)) {
-            times_new.insert(times_new.length, times[i]);
-            plans_new.insert(plans_new.length, plans[i]);
-          } else if (((year < year_cur) ||
-                  (year == year_cur && month < month_cur) ||
-                  (year == year_cur && month == month_cur && day < day_cur)) &&
-              (times[i] != ' ' || plans[i] != ' ')) {
-          } else if (times[i] == ' ') {
-            times_new.insert(times_new.length, times[i]);
-            plans_new.insert(plans_new.length, plans[i]);
-          } else if ((int.parse(times[i].substring(0, 2)) * 60 +
-                  int.parse(times[i].substring(
-                    3,
-                  ))) >=
-              (DateTime.now().hour * 60 + DateTime.now().minute)) {
-            times_new.insert(times_new.length, times[i]);
-            plans_new.insert(plans_new.length, plans[i]);
-          }
+      for (int i = 0; i < plans.length; i++) {
+        if ((year > year_cur) ||
+            (year == year_cur && month > month_cur) ||
+            (year == year_cur && month == month_cur && day > day_cur)) {
+          times_new.insert(times_new.length, times[i]);
+          plans_new.insert(plans_new.length, plans[i]);
+        } else if (((year < year_cur) ||
+                (year == year_cur && month < month_cur) ||
+                (year == year_cur && month == month_cur && day < day_cur)) &&
+            (times[i] != ' ' || plans[i] != ' ')) {
+        } else if (times[i] == ' ') {
+          times_new.insert(times_new.length, times[i]);
+          plans_new.insert(plans_new.length, plans[i]);
+        } else if ((int.parse(times[i].substring(0, 2)) * 60 +
+                int.parse(times[i].substring(
+                  3,
+                ))) >=
+            (DateTime.now().hour * 60 + DateTime.now().minute)) {
+          times_new.insert(times_new.length, times[i]);
+          plans_new.insert(plans_new.length, plans[i]);
+        } else {
+          old_times.insert(times_new.length, times[i]);
+          old_plans.insert(plans_new.length, plans[i]);
         }
-        setState(() {
+      }
+
+      setState(() {
+        if (_showOldPlans) {
+          times = old_times + times_new;
+          plans = old_plans + plans_new;
+          times_new = [];
+          plans_new = [];
+        } else {
           times = times_new;
           plans = plans_new;
 
           times_new = [];
           plans_new = [];
-        });
-      }
+          old_plans = [];
+          old_times = [];
+        }
+      });
     }
   }
 
@@ -419,7 +434,19 @@ class _PlansPageState extends State<PlansPage> {
             ? [
                 CircularProgressIndicator(
                   strokeWidth: 3,
+
                   //color: const Color.fromARGB(255, 255, 115, 0),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  tooltip: 'Settings',
+                  onPressed: () {
+                    if (context.mounted) {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => SettingsScreen(),
+                      ));
+                    }
+                  },
                 ),
                 IconButton(
                     onPressed: () {
@@ -432,6 +459,17 @@ class _PlansPageState extends State<PlansPage> {
                     icon: Icon(Icons.home_rounded)),
               ]
             : [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  tooltip: 'Settings',
+                  onPressed: () {
+                    if (context.mounted) {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => SettingsScreen(),
+                      ));
+                    }
+                  },
+                ),
                 IconButton(
                     onPressed: () {
                       if (context.mounted) {
@@ -537,19 +575,73 @@ class _PlansPageState extends State<PlansPage> {
                             selectedIndices.contains(index) && isSelectionMode
                                 ? Color.fromARGB(255, 245, 163, 163)
                                 : checkHighlight(times[index])
-                                    ? Color.fromARGB(195, 252, 188, 159)
+                                    ? Color.fromARGB(200, 250, 207, 188)
                                     : Color.fromARGB(160, 255, 255, 255),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       padding: const EdgeInsets.all(20.0),
                       margin: const EdgeInsets.only(bottom: 10.0),
                       child: ListTile(
+                          minVerticalPadding: 5,
                           title: Text(
-                            plans[index],
-                            //style: TextStyle(fontWeight: FontWeight.bold),
+                            plans[index] + '\n',
                           ),
-                          subtitle:
-                              times[index] == ' ' ? null : Text(times[index]),
+                          subtitle: times[index] == ' '
+                              ? null
+                              : (old_plans.contains(plans[index]))
+                                  ? IntrinsicHeight(
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment
+                                            .stretch, // Растягиваем по высоте
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(times[index]),
+                                          ),
+                                          SizedBox(
+                                            width: 7,
+                                          ),
+                                          Container(
+                                            padding: EdgeInsets.only(
+                                                right: 5, left: 5),
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                color: Color.fromARGB(
+                                                    97, 255, 255, 255)),
+                                            child: Text('время прошло'),
+                                          )
+                                        ],
+                                      ),
+                                    )
+                                  : checkHighlight(times[index])
+                                      ? IntrinsicHeight(
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment
+                                                .stretch, // Растягиваем по высоте
+                                            children: [
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(times[index]),
+                                              ),
+                                              SizedBox(
+                                                width: 7,
+                                              ),
+                                              Container(
+                                                padding: EdgeInsets.only(
+                                                    right: 5, left: 5),
+                                                decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                    color: Color.fromARGB(
+                                                        97, 255, 255, 255)),
+                                                child: Text('скоро'),
+                                              )
+                                            ],
+                                          ),
+                                        )
+                                      : Text(times[index]),
                           onTap: () {
                             if (times[index] == ' ') {
                               setState(() {

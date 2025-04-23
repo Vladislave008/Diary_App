@@ -162,6 +162,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       padding: const EdgeInsets.all(10.0),
                       child: SwitchListTile(
+                        activeTrackColor:
+                            const Color.fromARGB(255, 130, 106, 233),
                         title: Text('Показывать прошедшие планы'),
                         //subtitle: Text('Показывать/скрывать'),
                         value: _switchOldPlansValue,
