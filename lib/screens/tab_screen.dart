@@ -46,6 +46,7 @@ class _TabsPageState extends State<TabsPage> {
   @override
   void initState() {
     super.initState();
+
     fetchTabs();
   }
 
@@ -480,23 +481,39 @@ class _TabsPageState extends State<TabsPage> {
           ),
           child: Column(
             children: [
-              //SizedBox(height: 10),
-
+              SizedBox(height: 10),
               Container(
-                  padding: EdgeInsets.all(10.0),
+                  //padding: EdgeInsets.all(10.0),
                   decoration: BoxDecoration(
-                    color: Color.fromARGB(160, 255, 255, 255),
+                    //color: Color.fromARGB(160, 255, 255, 255),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: TextField(
                     controller: _nameController,
                     decoration: InputDecoration(
-                      labelText: 'Название Списка',
-                      suffixIcon: IconButton(
-                        icon: Icon(Icons.add_circle_outline),
-                        //color: Color.fromARGB(255, 212, 94, 15),
-                        onPressed: addTab,
-                      ),
+                      filled: true,
+                      fillColor: Color.fromARGB(160, 255, 255, 255),
+                      border: OutlineInputBorder(),
+                      labelText: 'Название нового списка',
+                      suffixIcon: AbsorbPointer(
+                          absorbing: _nameController.text.isEmpty,
+                          child: AnimatedOpacity(
+                            opacity:
+                                _nameController.text.isNotEmpty ? 1.0 : 0.0,
+                            duration: Duration(milliseconds: 400),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.check_circle,
+                                color: Color.fromARGB(255, 32, 190, 0),
+                                size: 35,
+                              ),
+                              onPressed: addTab,
+                              style: IconButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                          )),
                     ),
                     onChanged: (text) {
                       setState(() {});
@@ -533,6 +550,8 @@ class _TabsPageState extends State<TabsPage> {
                     int monthIndex = int.parse(monthIndexStr) - 1;
                     String monthName = months[monthIndex];
                     return Container(
+                      height: 150,
+                      clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
                         color:
                             selectedIndices.contains(index) && isSelectionMode
@@ -540,174 +559,170 @@ class _TabsPageState extends State<TabsPage> {
                                 : Color.fromARGB(160, 255, 255, 255),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      padding: const EdgeInsets.all(20.0),
+                      //padding: const EdgeInsets.all(20.0),
                       margin: const EdgeInsets.only(bottom: 10.0),
-                      child: ListTile(
-                        title: Text(
-                          tabs[index],
-                          //style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text('Создано $date $monthName $year'),
-                        onTap: () {
-                          if (isSelectionMode) {
-                            toggleSelection(index);
-                          } else {
-                            if (context.mounted) {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) =>
-                                    TabContentPage(tabName: tabs[index]),
-                              ));
+                      child: IntrinsicWidth(
+                          child: Row(children: [
+                        Expanded(
+                            // Равномерно распределяет пространство
+                            child: ListTile(
+                          title: Text(
+                            tabs[index],
+                            //style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text('Создано $date $monthName $year'),
+                          onTap: () {
+                            if (isSelectionMode) {
+                              toggleSelection(index);
+                            } else {
+                              if (context.mounted) {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) =>
+                                      TabContentPage(tabName: tabs[index]),
+                                ));
+                              }
                             }
-                          }
-                        },
-                        onLongPress: () {
-                          setState(() {
-                            isSelectionMode = true;
-                            toggleSelection(index);
-                          });
-                        },
-                        trailing: isSelectionMode
-                            ? Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                    IconButton(
-                                      icon: Icon(
-                                          pins[index]
-                                              ? Icons.star_rounded
-                                              : Icons.star_outline_rounded,
-                                          color: Colors.transparent),
-                                      selectedIcon: Icon(Icons.star_rounded),
-                                      onPressed: () {
-                                        toggleSelection(index);
-                                        ;
-                                      },
-                                    ),
-                                    Checkbox(
-                                      activeColor: const Color.fromARGB(
-                                          255, 236, 37, 23),
-                                      value: selectedIndices.contains(index),
-                                      onChanged: (value) {
-                                        toggleSelection(index);
-                                      },
-                                    )
-                                  ])
-                            : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                    IconButton(
-                                      icon: Icon(Icons.edit_outlined),
-                                      onPressed: () {
-                                        setState(() {
-                                          _newnameController.text = tabs[index];
-                                        });
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: Text('Обновить список'),
-                                              content: TextField(
-                                                controller: _newnameController,
-                                                decoration: InputDecoration(
-                                                  labelText:
-                                                      'Новое название списка',
-                                                ),
-                                                onChanged: (text) {
-                                                  setState(() {});
-                                                },
-                                                maxLength: 40,
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                    setState(() {
-                                                      _newnameController
-                                                          .clear();
-                                                    });
-                                                  },
-                                                  child: Text(
-                                                    'Отмена',
-                                                    style: TextStyle(
-                                                        color: Colors.red),
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              isSelectionMode = true;
+                              toggleSelection(index);
+                            });
+                          },
+                          trailing: isSelectionMode
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                      IconButton(
+                                        icon: Icon(
+                                            pins[index]
+                                                ? Icons.star_rounded
+                                                : Icons.star_outline_rounded,
+                                            color: Colors.transparent),
+                                        selectedIcon: Icon(Icons.star_rounded),
+                                        onPressed: () {
+                                          toggleSelection(index);
+                                          ;
+                                        },
+                                      ),
+                                      Checkbox(
+                                        activeColor: const Color.fromARGB(
+                                            255, 236, 37, 23),
+                                        value: selectedIndices.contains(index),
+                                        onChanged: (value) {
+                                          toggleSelection(index);
+                                        },
+                                      )
+                                    ])
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                      IconButton(
+                                        icon: Icon(Icons.edit_outlined),
+                                        onPressed: () {
+                                          setState(() {
+                                            _newnameController.text =
+                                                tabs[index];
+                                          });
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                title: Text('Обновить список'),
+                                                content: TextField(
+                                                  controller:
+                                                      _newnameController,
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        'Новое название списка',
                                                   ),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () async {
-                                                    Navigator.of(context).pop();
-                                                    await updateTab(
-                                                        tabs[index]);
-                                                    setState(() {
-                                                      _newnameController
-                                                          .clear();
-                                                    });
+                                                  onChanged: (text) {
+                                                    setState(() {});
                                                   },
-                                                  child: Text(
-                                                    'Готово',
+                                                  maxLength: 40,
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                      setState(() {
+                                                        _newnameController
+                                                            .clear();
+                                                      });
+                                                    },
+                                                    child: Text(
+                                                      'Отмена',
+                                                      style: TextStyle(
+                                                          color: Colors.red),
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: Icon(
-                                          pins[index]
-                                              ? Icons.star_rounded
-                                              : Icons.star_outline_rounded,
-                                          color: pins[index]
-                                              ? const Color.fromARGB(
-                                                  255, 238, 143, 0)
-                                              : null),
-                                      selectedIcon: Icon(Icons.star_rounded),
-                                      onPressed: () {
-                                        pinTab(index);
-                                      },
-                                    ),
-                                    /*IconButton(
-                                      icon: Icon(Icons.delete_outline_outlined),
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: Text('Удалить Список'),
-                                              content: Text(
-                                                  'Вы уверены, что хотите удалить список ${tabs[index]}?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context)
-                                                        .pop(); // Закрыть диалог
-                                                  },
-                                                  child: Text('Отмена'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () async {
-                                                    Navigator.of(context)
-                                                        .pop(); // Закрыть диалог
-                                                    await pinTab(tabs[
-                                                        index]); // Удалить таб
-                                                  },
-                                                  child: Text(
-                                                    'Удалить',
-                                                    style: TextStyle(
-                                                        color: Colors.red),
+                                                  TextButton(
+                                                    onPressed: () async {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                      await updateTab(
+                                                          tabs[index]);
+                                                      setState(() {
+                                                        _newnameController
+                                                            .clear();
+                                                      });
+                                                    },
+                                                    child: Text(
+                                                      'Готово',
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      },
-                                    ),*/
-                                  ]),
-                      ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
+                                      ),
+                                      /*IconButton(
+                                        icon: Icon(
+                                            pins[index]
+                                                ? Icons.star_rounded
+                                                : Icons.star_outline_rounded,
+                                            color: pins[index]
+                                                ? const Color.fromARGB(
+                                                    255, 238, 143, 0)
+                                                : null),
+                                        selectedIcon: Icon(Icons.star_rounded),
+                                        onPressed: () {
+                                          pinTab(index);
+                                        },
+                                      ),*/
+                                    ]),
+                        )),
+                        SizedBox(
+                          width: 30,
+                          height: double.infinity, // Растягиваем на всю ширину
+                          child: ElevatedButton(
+                            onPressed: () {
+                              pinTab(index);
+                            },
+                            style: ElevatedButton.styleFrom(
+                                elevation: 2,
+                                shadowColor: Colors.transparent,
+                                backgroundColor: pins[index]
+                                    ? const Color.fromARGB(153, 238, 143, 0)
+                                    : Color.fromARGB(24, 0, 0, 0),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.only(
+                                    topRight: Radius.circular(
+                                        20), // Больше скругление
+                                    bottomRight:
+                                        Radius.circular(8), // Меньше скругление
+                                  ),
+                                )),
+                            child: Text(''),
+                          ),
+                        )
+                      ])),
                     );
                   },
                 ),

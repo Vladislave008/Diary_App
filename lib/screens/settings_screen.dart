@@ -193,7 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 WidgetStateProperty.resolveWith<TextStyle>(
                               (Set<WidgetState> states) {
                                 return TextStyle(
-                                  fontSize: 13, // Размер текста
+                                  fontSize: 13,   
                                 );
                               },
                             ),

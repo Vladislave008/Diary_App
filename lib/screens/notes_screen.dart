@@ -470,7 +470,7 @@ class _NotesScreenState extends State<NotesScreen> {
                                             child: ShaderMask(
                                               shaderCallback: (Rect bounds) {
                                                 return LinearGradient(
-                                                  begin: Alignment.topCenter,
+                                                  begin: Alignment.bottomCenter,
                                                   end: Alignment.bottomCenter,
                                                   colors: [
                                                     Colors.black,

@@ -264,25 +264,49 @@ class _TabContentPageState extends State<TabContentPage> {
           ),
           child: Column(
             children: [
+              SizedBox(height: 10),
               Container(
                   decoration: BoxDecoration(
-                    color: Color.fromARGB(160, 255, 255, 255),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  padding: EdgeInsets.all(10.0),
+                  //padding: EdgeInsets.all(10.0),
                   child: TextField(
                     controller: _nameController,
                     decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Color.fromARGB(160, 255, 255, 255),
+                      border: OutlineInputBorder(),
                       labelText: 'Введите текст',
-                      suffixIcon: IconButton(
+                      suffixIcon: AbsorbPointer(
+                          absorbing: _nameController.text.isEmpty,
+                          child: AnimatedOpacity(
+                            opacity:
+                                _nameController.text.isNotEmpty ? 1.0 : 0.0,
+                            duration: Duration(milliseconds: 400),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.check_circle,
+                                color: Color.fromARGB(255, 32, 190, 0),
+                                size: 35,
+                              ),
+                              onPressed: () {
+                                _createItem(_nameController.text);
+                              },
+                              style: IconButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                          )),
+                      /*suffixIcon: IconButton(
                         icon: Icon(
                           Icons.add_circle_outline,
                         ),
-                        //color: Color.fromARGB(255, 212, 94, 15),
+                        
                         onPressed: () {
                           _createItem(_nameController.text);
                         },
-                      ),
+                      ),*/
                     ),
                     onChanged: (text) {
                       setState(() {});
@@ -309,6 +333,55 @@ class _TabContentPageState extends State<TabContentPage> {
                           onTap: () {
                             if (isSelectionMode) {
                               toggleSelection(index);
+                            } else {
+                              setState(() {
+                                _newnameController.text = items[index];
+                              });
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text('Обновить запись'),
+                                    content: TextField(
+                                      controller: _newnameController,
+                                      decoration: InputDecoration(
+                                        labelText: 'Новое название',
+                                      ),
+                                      onChanged: (text) {
+                                        setState(() {});
+                                      },
+                                      maxLength: 40,
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                          setState(() {
+                                            _newnameController.clear();
+                                          });
+                                        },
+                                        child: Text(
+                                          'Отмена',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () async {
+                                          Navigator.of(context).pop();
+                                          await updateItem(items[index]);
+                                          setState(() {
+                                            _newnameController.clear();
+                                          });
+                                        },
+                                        child: Text(
+                                          'Готово',
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                              ;
                             }
                           },
                           onLongPress: () {

@@ -389,6 +389,98 @@ class _NavigationExampleState extends State<NavigationExample> {
             ),
             SizedBox(height: 10),
             Container(
+                child: IntrinsicWidth(
+                    child: Row(
+              children: [
+                Expanded(
+                  // Равномерно распределяет пространство
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(160, 255, 255, 255),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        /*onTap: () {
+                                              if (isSelectionMode) {
+                                                toggleSelection(firstIndex);
+                                              } else {
+                                                _navigateToNoteContentPage(
+                                                    notes[firstIndex]);
+                                              }
+                                            },
+                                            onLongPress: () {
+                                              setState(() {
+                                                isSelectionMode = true;
+                                                toggleSelection(firstIndex);
+                                              });
+                                            },*/
+                        child: ShaderMask(
+                          shaderCallback: (Rect bounds) {
+                            return LinearGradient(
+                              begin: Alignment.bottomLeft,
+                              end: Alignment.topRight,
+                              colors: [Colors.black, Colors.transparent],
+                              stops: [0.7, 1.0],
+                            ).createShader(bounds);
+                          },
+                          blendMode: BlendMode.dstIn,
+                          child: SingleChildScrollView(
+                            physics: AlwaysScrollableScrollPhysics(),
+                            child: ListTile(
+                                //leading: Icon(Icons.alarm),
+                                /* trailing: plans.length == 0 || plan_to_show == ' '
+                        ? null
+                        : Text(
+                            'Планы на сегодня',
+                            style: TextStyle(fontSize: 13),
+                          ),*/
+                                onTap: () {
+                                  if (context.mounted) {
+                                    Navigator.of(context)
+                                        .push(MaterialPageRoute(
+                                      builder: (context) =>
+                                          PlansPage(Date: DateTime.now()),
+                                    ));
+                                  }
+                                },
+                                subtitle: times.length == 0
+                                    ? null
+                                    : times[0] == ' '
+                                        ? null
+                                        : Text(times[0]),
+                                title: plans.length == 0
+                                    ? SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Text('Нет планов'))
+                                    : SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Text(plans[0]))),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 10,
+                ),
+                Expanded(
+                  child: Container(
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Color.fromARGB(160, 255, 255, 255),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text('')),
+                ),
+              ],
+            ))),
+            SizedBox(height: 10),
+            Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Color.fromARGB(160, 255, 255, 255),
@@ -396,12 +488,12 @@ class _NavigationExampleState extends State<NavigationExample> {
                 ),
                 child: ListTile(
                     leading: Icon(Icons.alarm),
-                    trailing: plans.length == 0 || plan_to_show == ' '
+                    /* trailing: plans.length == 0 || plan_to_show == ' '
                         ? null
                         : Text(
                             'Планы на сегодня',
                             style: TextStyle(fontSize: 13),
-                          ),
+                          ),*/
                     onTap: () {
                       if (context.mounted) {
                         Navigator.of(context).push(MaterialPageRoute(

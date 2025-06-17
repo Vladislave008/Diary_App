@@ -584,7 +584,7 @@ class _PlansPageState extends State<PlansPage> {
                       child: ListTile(
                           minVerticalPadding: 5,
                           title: Text(
-                            plans[index] + '\n',
+                            plans[index],
                           ),
                           subtitle: times[index] == ' '
                               ? null
