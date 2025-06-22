@@ -46,15 +46,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     FirebaseService().onListenUser((user) {
-      if (user == null) {
+      /*if (user == null) {
         Navigator.push(kNavigatorKey.currentContext!,
             MaterialPageRoute(builder: (_) => AuthScreen()));
-        //MaterialPageRoute(builder: (_) => NavigationExample()));
-        //MaterialPageRoute(builder: (_) => ItemList()));
+
       } else if (user.emailVerified) {
         Navigator.push(kNavigatorKey.currentContext!,
             MaterialPageRoute(builder: (_) => NavigationExample()));
-      }
+      }*/
+      Navigator.push(kNavigatorKey.currentContext!,
+          MaterialPageRoute(builder: (_) => AuthScreen()));
     });
   }
 

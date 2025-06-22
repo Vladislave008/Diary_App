@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:namer_app/screens/confirm_letter_screen.dart';
+import 'package:namer_app/screens/home_screen.dart';
+import 'package:namer_app/screens/auth_screen.dart';
 
 class FirebaseService {
   static final FirebaseService _singleton = FirebaseService._internal();
@@ -32,15 +35,8 @@ class FirebaseService {
           return 'login';
         } else if (user.emailVerified == false) {
           if (context.mounted) {
-            try {
-              await user.delete();
-              print("User account deleted successfully.");
-            } on FirebaseAuthException catch (e) {
-              print("Failed to delete user account: $e");
-            }
-            showSnackbar(context,
-                'Аккаунт не подтверждён. Создайте его заново и подтвердите.');
-            return 'invalid_data';
+            showSnackbar(context, 'Аккаунт не подтверждён. Подтвердите его.');
+            return 'not_verified';
           }
         }
       }
@@ -56,7 +52,8 @@ class FirebaseService {
           );
         } else if (e.code == 'invalid-credential') {
           print('invalid-credential');
-          showSnackbar(context, 'Неверные данные аккаунта. Попробуйте ещё раз');
+          showSnackbar(context,
+              'Неверные данные аккаунта. Попробуйте ещё раз или создайте аккаунт');
         } else if (e.code == 'user-not-found') {
           print('Нет пользователя с такой почтой');
           showSnackbar(context, 'Нет пользователя с такой почтой');
@@ -140,6 +137,7 @@ class FirebaseService {
       return true; // Возвращаем true, если email подтвержден
     } else {
       print("Email is not verified yet.");
+
       return false; // Возвращаем false, если email не подтвержден
     }
   }
@@ -170,7 +168,7 @@ class FirebaseService {
           barrierDismissible:
               false, // пользователи не могут закрыть диалог, пока идет отсчет
           builder: (BuildContext context) {
-            int countdown = 100; // Общее время ожидания в секундах
+            int countdown = 60; // Общее время ожидания в секундах
 
             // Создаем таймер только один раз при создании диалога
             Timer? timer;
@@ -190,10 +188,30 @@ class FirebaseService {
                 });
 
                 return AlertDialog(
-                  title: const Text('Подтвердите аккаунт'),
-                  content: Text(
-                      'На вашу почту отправлено письмо для подтверждения аккаунта.\nОжидание подтверждения: $countdown секунд'),
-                );
+                    title: const Text('Подтвердите аккаунт'),
+                    content: Column(children: [
+                      Text(
+                          'На вашу почту отправлено письмо для подтверждения аккаунта.\nОжидание подтверждения: $countdown секунд'),
+                      TextButton(
+                          onPressed: () async {
+                            final credential =
+                                await auth.signInWithEmailAndPassword(
+                                    email: email, password: password);
+                            print(credential);
+                            User? user = credential.user;
+                            if (user != null && user.emailVerified) {
+                              if (context.mounted) {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => NavigationExample(),
+                                ));
+                              }
+                            } else if (user != null &&
+                                user.emailVerified == false) {
+                              showSnackbar(context, 'Почта не подтверждена');
+                            }
+                          },
+                          child: Text('Готово'))
+                    ]));
               },
             );
           },
@@ -205,9 +223,8 @@ class FirebaseService {
       // Периодическая проверка подтверждения email
       bool isVerified = false;
 
-      for (int i = 0; i < 25; i++) {
-        // Проверяем 5 раз
-        await Future.delayed(Duration(seconds: 5)); // Ждем 5 секунд
+      for (int i = 0; i < 60; i++) {
+        await Future.delayed(Duration(seconds: 1));
         isVerified = await checkEmailVerification(credential.user!);
         if (isVerified) {
           break;
@@ -239,7 +256,7 @@ class FirebaseService {
               context, 'Этот адрес электронной почты уже зарегистрирован');
         }
       }
-      print(e);
+      print('$e ыыыыыыыыыыыыыыыыыыыыыыыыыы');
 
       return 'invalid_data'; // Возвращаем 'invalid_data' в случае ошибки
     } catch (e) {

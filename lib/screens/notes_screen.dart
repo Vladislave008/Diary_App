@@ -439,7 +439,7 @@ class _NotesScreenState extends State<NotesScreen> {
                                                 .zero, // Убираем скругление у кнопки
                                           ),
                                         ),
-                                        child: Text("Действие",
+                                        child: Text("",
                                             style: TextStyle(fontSize: 14)),
                                       ),
                                     ),

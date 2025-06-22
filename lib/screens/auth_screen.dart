@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:namer_app/firebase_service.dart';
 import 'package:namer_app/screens/reset_password_screen.dart';
 import 'package:namer_app/screens/home_screen.dart';
+import 'package:namer_app/screens/confirm_letter_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:namer_app/widgets/auth_form.dart';
 import 'package:namer_app/widgets/reg_form.dart';
@@ -33,7 +34,6 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  void userTable(String id) {}
   @override
   Widget build(BuildContext context) {
     Provider.of<ContextProvider>(context, listen: false).setContext(context);
@@ -59,12 +59,22 @@ class _AuthScreenState extends State<AuthScreen> {
       if (loginSuccess == 'login') {
         User? user = FirebaseAuth.instance.currentUser;
 
-        if (user != null) {
+        if (user != null && user.emailVerified) {
           if (context.mounted) {
             Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => NavigationExample(),
             ));
           }
+        }
+      } else if (loginSuccess == 'not_verified') {
+        if (context.mounted) {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => ConfirmLetterScreen(),
+          ));
+        }
+      } else if (loginSuccess == 'invalid-data') {
+        if (context.mounted) {
+          showSnackbar(context, 'Неверные данные аккаунта');
         }
       }
     }
@@ -114,18 +124,14 @@ class _AuthScreenState extends State<AuthScreen> {
               print("User is null after registration.");
             }
           } else if (registrationSuccess == 'not_verified') {
-            print("Registration failed. Deleting user account...");
-            User? user = FirebaseAuth.instance.currentUser;
-
-            if (user != null) {
-              try {
-                await user.delete(); // Удаляем аккаунт пользователя
-                print("User account deleted successfully.");
-              } on FirebaseAuthException catch (e) {
-                print("Failed to delete user account: $e");
+            if (context.mounted) {
+              showSnackbar(context, 'Этот аккаунт не был подтверждён');
+              if (context.mounted) {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => ConfirmLetterScreen(),
+                ));
               }
-            } else {
-              print("No user to delete.");
+              print("Registration failed. Deleting user account...");
             }
           } else if (registrationSuccess == 'invalid_data') {
             print("Registration failed. Invalid data provided.");
